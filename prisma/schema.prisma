@@ -1,0 +1,603 @@
+// AROHA — core data model.
+//
+// Design rules (see AROHA_Master_Product_Specification §6, §52):
+// - The backend owns authoritative game state. AI output is never written
+//   directly into progression tables.
+// - Progression is auditable: XP and stat gains are append-only transactions.
+//   Level, totals and character tier are derived, never stored as bare numbers.
+// - Single user for now, but every user-owned row carries `userId` so real
+//   accounts can be introduced without reshaping the schema.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+/// Areas of life that goals and quests belong to (spec §22).
+enum LifeArea {
+  PHYSICAL
+  MENTAL
+  LEARNING
+  SOCIAL
+  PERSONAL_GOAL
+  CREATIVITY
+  EXPERIENCES
+  CAREER
+  FINANCE
+  SKILLS
+  RELATIONSHIPS
+  PERSONAL_DEVELOPMENT
+}
+
+/// Character attributes (spec §14).
+enum Attribute {
+  INTELLECT
+  STRENGTH
+  SOCIAL
+  CREATIVITY
+  DISCIPLINE
+  SKILLS
+}
+
+/// Lifecycle status. Archiving is separate (Goal.archivedAt) so a goal keeps
+/// its last status when put away.
+enum GoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+/// How familiar the user already is with a goal's subject. Roadmaps skip or
+/// compress foundations for experienced users (spec §9).
+enum StartingPoint {
+  NEW
+  SOME_EXPERIENCE
+  EXPERIENCED
+}
+
+/// Who authored a piece of roadmap content.
+enum ContentSource {
+  USER
+  TEMPLATE
+  AI
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+/// Quest lifecycle. DEFERRED quests are offered again the next day; quests
+/// left unfinished when their day ends become EXPIRED (never punished).
+enum QuestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  DEFERRED
+  EXPIRED
+}
+
+/// The user's energy check-in for a day (spec §55: recovery and flexibility).
+enum DayEnergy {
+  LOW
+  NORMAL
+  HIGH
+}
+
+enum QuestDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+/// Who proposed a quest. AI-sourced quests are still validated by the backend.
+enum QuestSource {
+  AI
+  SYSTEM
+  USER
+}
+
+/// What produced an XP transaction. Paired with `sourceId` for idempotency.
+enum XpSourceType {
+  QUEST_COMPLETION
+  MISSION_COMPLETION
+  MILESTONE_COMPLETION
+  GOAL_COMPLETION
+  ACHIEVEMENT
+  ADJUSTMENT
+}
+
+enum ReflectionKind {
+  QUEST
+  DAILY
+  WEEKLY
+}
+
+/// Visual base shape of the character avatar.
+enum AvatarStyle {
+  ORB
+  CREST
+  MONOGRAM
+}
+
+enum TimeOfDay {
+  EARLY_MORNING
+  MORNING
+  AFTERNOON
+  EVENING
+  FLEXIBLE
+}
+
+/// How stretching the user wants their days to feel (spec §24).
+enum ChallengeLevel {
+  GENTLE
+  BALANCED
+  AMBITIOUS
+}
+
+/// Ways the user can realistically move their body (spec §3 PHYSICAL).
+enum MovementOption {
+  GYM
+  HOME_WORKOUT
+  WALKING
+  RUNNING
+  CYCLING
+  SPORTS
+  YOGA_MOBILITY
+  OUTDOORS
+}
+
+/// How the user prefers to learn (spec §3 LEARNING).
+enum LearningFormat {
+  READING
+  VIDEO
+  AUDIO
+  HANDS_ON
+  COURSES
+  AI_LESSONS
+}
+
+// ─── Identity ───────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  /// Stable handle. The single local user is resolved by handle.
+  handle         String    @unique
+  displayName    String
+  pronouns       String?
+  bio            String?
+  /// IANA timezone, e.g. "Asia/Kolkata". Defines the user's calendar day.
+  timezone       String    @default("UTC")
+  /// First time the user saved their own profile details.
+  profileSavedAt DateTime?
+  onboardedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  character        Character?
+  preferences      UserPreferences?
+  interests        UserInterest[]
+  lifeAreas        UserLifeArea[]
+  goals            Goal[]
+  dailyQuestSets   DailyQuestSet[]
+  quests           Quest[]
+  questCompletions QuestCompletion[]
+  xpTransactions   XpTransaction[]
+  statTransactions StatTransaction[]
+  skills           UserSkill[]
+  achievements     UserAchievement[]
+  streaks          Streak[]
+  reflections      Reflection[]
+}
+
+/// The user's living AROHA character (spec §7, §30). Holds game-facing
+/// identity only; level, XP and stats are derived from the ledgers.
+model Character {
+  id           String      @id @default(cuid())
+  userId       String      @unique
+  /// Short personal motto shown on the character card.
+  motto        String?
+  avatarStyle  AvatarStyle @default(ORB)
+  /// Palette key, validated in app code (src/modules/identity/avatar.ts).
+  avatarColor  String      @default("violet")
+  /// Emblem key, validated in app code (src/modules/identity/avatar.ts).
+  avatarEmblem String      @default("sprout")
+  /// First time the user saved their own appearance.
+  customizedAt DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Basic personal preferences that later shape quest generation.
+/// No row means the user hasn't set preferences; defaults apply.
+model UserPreferences {
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  /// Realistic time available for growth activities on a normal day.
+  dailyMinutes       Int              @default(60)
+  preferredTimeOfDay TimeOfDay        @default(FLEXIBLE)
+  challengeLevel     ChallengeLevel   @default(BALANCED)
+  movementOptions    MovementOption[]
+  learningFormats    LearningFormat[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserInterest {
+  id        String    @id @default(cuid())
+  userId    String
+  label     String
+  /// Normalised label, used to prevent duplicates.
+  slug      String
+  /// Set when the interest came from a life-area suggestion.
+  lifeArea  LifeArea?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slug])
+}
+
+/// The user's relationship with a life area (spec §22–23).
+/// Core daily areas are always active even without a row.
+model UserLifeArea {
+  id        String   @id @default(cuid())
+  userId    String
+  lifeArea  LifeArea
+  isActive  Boolean  @default(true)
+  /// Current area of focus. At most three, enforced in the identity service.
+  isFocus   Boolean  @default(false)
+  /// 1-based order among focus areas; null when not a focus.
+  focusRank Int?
+  /// What the user wants from this area, in their own words.
+  intention String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lifeArea])
+}
+
+// ─── Goals → Milestones → Missions (spec §8–10) ─────────────────────────────
+
+model Goal {
+  id            String        @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  lifeArea      LifeArea
+  /// Why the goal matters, in the user's own words.
+  motivation    String?
+  /// What "done" looks like, e.g. "Run a 10k under an hour".
+  target        String?
+  /// Calendar date only.
+  deadline      DateTime?     @db.Date
+  startingPoint StartingPoint @default(NEW)
+  status        GoalStatus    @default(ACTIVE)
+  /// Lower number = higher priority. The lowest is the "major goal".
+  priority      Int           @default(0)
+  completedAt   DateTime?
+  pausedAt      DateTime?
+  /// Set when archived; archived goals are hidden and read-only.
+  archivedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones       Milestone[]
+  missions         Mission[]
+  roadmapRevisions RoadmapRevision[]
+  quests           Quest[]
+
+  @@index([userId, status])
+  @@index([userId, archivedAt])
+}
+
+/// A stage of the roadmap. Status is derived from its missions when it has
+/// any (see src/modules/goals/progress.ts) and stored for cheap querying.
+model Milestone {
+  id          String          @id @default(cuid())
+  goalId      String
+  title       String
+  description String?
+  /// 0-based position within the goal. Not unique so reordering is simple.
+  order       Int
+  status      MilestoneStatus @default(PENDING)
+  source      ContentSource   @default(USER)
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  goal     Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  missions Mission[]
+
+  @@index([goalId, order])
+}
+
+/// A concrete objective inside a milestone (spec §10). The bridge from
+/// long-term goals to daily quests.
+model Mission {
+  id          String          @id @default(cuid())
+  /// Denormalised from the milestone for goal-level queries.
+  goalId      String
+  milestoneId String
+  title       String
+  description String?
+  /// 0-based position within the milestone.
+  order       Int
+  /// PENDING, COMPLETED or SKIPPED (IN_PROGRESS is milestone-only).
+  status      MilestoneStatus @default(PENDING)
+  source      ContentSource   @default(USER)
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  goal      Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  milestone Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  quests    Quest[]
+
+  @@index([goalId])
+  @@index([milestoneId, order])
+}
+
+/// Snapshot of a generated or applied roadmap. Every generation (template
+/// today, AI Mentor later) is recorded so changes stay auditable.
+model RoadmapRevision {
+  id        String        @id @default(cuid())
+  goalId    String
+  source    ContentSource
+  /// Generator identifier, e.g. "rule-based@1:programming" or an AI model id.
+  generator String
+  summary   String?
+  /// The validated RoadmapDraft that was applied (src/modules/goals/roadmap.ts).
+  snapshot  Json
+  createdAt DateTime      @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt])
+}
+
+// ─── Quests (spec §3–4, §53) ────────────────────────────────────────────────
+
+/// One per user per calendar day (in the user's timezone). Created once on
+/// the first visit of the day; refreshing never regenerates it.
+model DailyQuestSet {
+  id        String    @id @default(cuid())
+  userId    String
+  /// Calendar date only; time component is always 00:00.
+  date      DateTime  @db.Date
+  energy    DayEnergy @default(NORMAL)
+  /// Why this set was composed the way it was (shown to the user).
+  rationale String?
+  /// Generator identifier, e.g. "rule-based@1" or an AI model id.
+  generator String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quests Quest[]
+
+  @@unique([userId, date])
+}
+
+model Quest {
+  id               String          @id @default(cuid())
+  userId           String
+  dailyQuestSetId  String?
+  goalId           String?
+  missionId        String?
+  lifeArea         LifeArea
+  /// Position in the day: a core category ("PHYSICAL", …) or "BONUS".
+  /// Unique within a set, so a day can never hold two quests for one slot.
+  slot             String
+  isCore           Boolean         @default(true)
+  sortOrder        Int             @default(0)
+  /// Template (or AI plan) the quest came from; used to avoid repeats.
+  templateKey      String
+  title            String
+  description      String?
+  /// Short practical guide shown on the quest page.
+  steps            String[]
+  /// Category-specific content, e.g. a learning experience. Shape validated
+  /// in src/modules/quests/payload.ts.
+  payload          Json?
+  difficulty       QuestDifficulty @default(MEDIUM)
+  estimatedMinutes Int?
+  /// Set by the backend progression rules, never trusted from AI output.
+  xpReward         Int
+  status           QuestStatus     @default(PENDING)
+  source           QuestSource
+  /// Why the quest was chosen for this user.
+  rationale        String?
+  startedAt        DateTime?
+  skippedAt        DateTime?
+  /// "What got in the way?" — the user's answer when skipping.
+  skipReason       String?
+  /// Times the user swapped this slot for a different quest today.
+  swapCount        Int             @default(0)
+  /// The deferred quest this one continues, if carried over from a past day.
+  carriedFromId    String?         @unique
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyQuestSet DailyQuestSet?   @relation(fields: [dailyQuestSetId], references: [id], onDelete: SetNull)
+  goal          Goal?            @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  mission       Mission?         @relation(fields: [missionId], references: [id], onDelete: SetNull)
+  carriedFrom   Quest?           @relation("QuestCarryOver", fields: [carriedFromId], references: [id], onDelete: SetNull)
+  carriedTo     Quest?           @relation("QuestCarryOver")
+  completion    QuestCompletion?
+
+  @@unique([dailyQuestSetId, slot])
+  @@index([userId, status])
+  @@index([userId, templateKey])
+}
+
+model QuestCompletion {
+  id          String   @id @default(cuid())
+  questId     String   @unique
+  userId      String
+  completedAt DateTime @default(now())
+  /// Optional short reflection captured at completion.
+  note        String?
+  /// Optional measurable result (e.g. "32 minutes", "15 pages").
+  result      String?
+  /// Optional structured evidence (links, numbers). Shape validated in app code.
+  evidence    Json?
+  /// XP the quest was worth when completed. Recorded, not yet awarded: the
+  /// progression engine turns completions into XpTransactions.
+  xpReward    Int
+  updatedAt   DateTime @updatedAt
+
+  quest Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+}
+
+// ─── Progression ledger (spec §12–14) ───────────────────────────────────────
+
+/// Append-only XP ledger. Total XP and level are derived from these rows.
+model XpTransaction {
+  id         String       @id @default(cuid())
+  userId     String
+  amount     Int
+  sourceType XpSourceType
+  /// Id of the quest/mission/goal/achievement that produced the XP.
+  /// Unique per source so the same action can never award XP twice.
+  sourceId   String?
+  lifeArea   LifeArea?
+  reason     String
+  createdAt  DateTime     @default(now())
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  statTransactions StatTransaction[]
+
+  @@unique([sourceType, sourceId])
+  @@index([userId, createdAt])
+}
+
+/// Attribute gains, each tied to the XP event that caused it.
+model StatTransaction {
+  id              String    @id @default(cuid())
+  userId          String
+  xpTransactionId String
+  attribute       Attribute
+  amount          Int
+  createdAt       DateTime  @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xpTransaction XpTransaction @relation(fields: [xpTransactionId], references: [id], onDelete: Cascade)
+
+  @@unique([xpTransactionId, attribute])
+  @@index([userId, attribute])
+}
+
+// ─── Skills (spec §15–16) ───────────────────────────────────────────────────
+
+/// Skill catalogue. `parentId` forms the skill tree.
+model Skill {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String?
+  lifeArea    LifeArea
+  parentId    String?
+  createdAt   DateTime @default(now())
+
+  parent     Skill?      @relation("SkillTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children   Skill[]     @relation("SkillTree")
+  userSkills UserSkill[]
+}
+
+model UserSkill {
+  id         String   @id @default(cuid())
+  userId     String
+  skillId    String
+  xp         Int      @default(0)
+  unlockedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skillId])
+}
+
+// ─── Achievements & streaks (spec §17–18) ───────────────────────────────────
+
+/// Achievement catalogue. Unlock rules live in the progression engine, keyed by slug.
+model Achievement {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  description String
+  xpReward    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  users UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+}
+
+model Streak {
+  id               String    @id @default(cuid())
+  userId           String
+  /// What the streak tracks, e.g. "life-area:PHYSICAL" or "daily-quests".
+  key              String
+  currentCount     Int       @default(0)
+  longestCount     Int       @default(0)
+  lastActivityDate DateTime? @db.Date
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+}
+
+// ─── Reflection (spec §42, §45) ─────────────────────────────────────────────
+
+model Reflection {
+  id        String         @id @default(cuid())
+  userId    String
+  kind      ReflectionKind
+  /// Calendar date the reflection is about.
+  date      DateTime       @db.Date
+  wentWell  String?
+  learned   String?
+  difficult String?
+  tomorrow  String?
+  /// AI-written summary, stored separately from the user's own words.
+  aiSummary String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
