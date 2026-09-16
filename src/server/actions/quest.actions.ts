@@ -49,14 +49,19 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
 
   try {
     const user = await getCurrentUser();
-    const { missionCompleted, progression } = await quests.completeQuest(user, parsed.data);
+    const { missionCompleted, progression, skill } = await quests.completeQuest(user, parsed.data);
     revalidatePath("/", "layout");
 
     const xp = progression.xpAwarded > 0 ? ` +${progression.xpAwarded} XP` : "";
+    const skillNote = skill?.awarded
+      ? skill.leveledUp
+        ? ` · ${skill.skillName} ${skill.mastered ? "mastered!" : `reached level ${skill.level}`}`
+        : ` · ${skill.skillName} +${skill.xpAwarded} skill XP`
+      : "";
     return {
       ok: true,
-      message: missionCompleted ? `Quest complete — and the mission is done.${xp}` : `Quest complete.${xp}`,
-      data: { missionCompleted, progression },
+      message: (missionCompleted ? `Quest complete — and the mission is done.${xp}` : `Quest complete.${xp}`) + skillNote,
+      data: { missionCompleted, progression, skill },
     };
   } catch (error) {
     if (error instanceof quests.QuestError) return { ok: false, error: error.message };

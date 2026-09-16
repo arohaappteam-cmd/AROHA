@@ -25,6 +25,7 @@ import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { questRepository, type PricedDraft } from "@/server/repositories/quest.repository";
 import * as goals from "@/server/services/goal.service";
+import * as skills from "@/server/services/skill.service";
 
 /** Business-rule failures that are safe to show to the user. */
 export class QuestError extends Error {
@@ -232,7 +233,24 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     completedAt: completion.completedAt,
     title: quest.title,
   });
-  return { missionCompleted, progression: outcome };
+
+  // Skill progress rides on top of the completion; it must never block it.
+  let skill: Awaited<ReturnType<typeof skills.questCompleted>> = null;
+  try {
+    skill = await skills.questCompleted({
+      userId: user.id,
+      questId: quest.id,
+      lifeArea: quest.lifeArea,
+      templateKey: quest.templateKey,
+      title: quest.title,
+      goalTitle: quest.goal?.title ?? null,
+      xpReward: quest.xpReward,
+    });
+  } catch (error) {
+    console.error("Skill award failed for quest", quest.id, error);
+  }
+
+  return { missionCompleted, progression: outcome, skill };
 }
 
 /** Add or edit the reflection on a completed quest (any day — it's the user's record). */
@@ -251,6 +269,7 @@ export async function undoCompletion(user: Pick<User, "id" | "timezone">, questI
   const quest = await requireQuest(user, questId, "undo");
   await questRepository.undoCompletion(quest.id, quest.startedAt ? "IN_PROGRESS" : "PENDING");
   await progression().questCompletionReverted({ userId: user.id, questId: quest.id });
+  await skills.questCompletionReverted(user.id, quest.id);
 }
 
 export async function skipQuest(user: Pick<User, "id" | "timezone">, questId: string, reason: string) {

@@ -194,6 +194,7 @@ model User {
   xpTransactions   XpTransaction[]
   statTransactions StatTransaction[]
   skills           UserSkill[]
+  skillXp          SkillXpTransaction[]
   achievements     UserAchievement[]
   streaks          Streak[]
   reflections      Reflection[]
@@ -510,26 +511,65 @@ model StatTransaction {
 
 // ─── Skills (spec §15–16) ───────────────────────────────────────────────────
 
-/// Skill catalogue. `parentId` forms the skill tree.
+/// One domain of capability — Programming, Fitness, Music… (spec §15).
+/// Trees are rows, not code, so AI-generated skill paths can add trees later.
+model SkillTree {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String?
+  emoji       String        @default("✨")
+  lifeArea    LifeArea
+  source      ContentSource @default(TEMPLATE)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  skills Skill[]
+}
+
+/// Skill catalogue. `parentId` forms the branch structure inside a tree;
+/// `requiresId` + `unlockLevel` gate when a skill opens up (spec §16).
+/// Skills are deliberately unequal: each carries its own XP cost and depth.
 model Skill {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String        @id @default(cuid())
+  treeId      String
+  slug        String        @unique
   name        String
   description String?
   lifeArea    LifeArea
   parentId    String?
-  createdAt   DateTime @default(now())
+  /// 0-based position among siblings, for stable tree rendering.
+  order       Int           @default(0)
+  /// Highest level this skill reaches. Deep skills go further than basics.
+  maxLevel    Int           @default(5)
+  /// XP cost of the first level; later levels cost more (modules/skills/levels.ts).
+  baseXp      Int           @default(50)
+  /// The skill that must be levelled before this one opens; null = open from the start.
+  requiresId  String?
+  /// Level `requires` must reach before this skill unlocks.
+  unlockLevel Int           @default(1)
+  source      ContentSource @default(TEMPLATE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  parent     Skill?      @relation("SkillTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children   Skill[]     @relation("SkillTree")
-  userSkills UserSkill[]
+  tree           SkillTree            @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  parent         Skill?               @relation("SkillHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Skill[]              @relation("SkillHierarchy")
+  requires       Skill?               @relation("SkillUnlock", fields: [requiresId], references: [id], onDelete: SetNull)
+  unlocks        Skill[]              @relation("SkillUnlock")
+  userSkills     UserSkill[]
+  xpTransactions SkillXpTransaction[]
+
+  @@index([treeId, order])
 }
 
+/// The user's relationship with a skill: created the first time real progress
+/// lands in it. XP and level are derived from the SkillXpTransaction ledger.
 model UserSkill {
   id         String   @id @default(cuid())
   userId     String
   skillId    String
-  xp         Int      @default(0)
   unlockedAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -537,6 +577,28 @@ model UserSkill {
   skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([userId, skillId])
+}
+
+/// Append-only per-skill XP ledger — the skill progression history (spec §15).
+/// Unique per (skill, source) so one action can feed several skills but never
+/// pays the same skill twice.
+model SkillXpTransaction {
+  id         String       @id @default(cuid())
+  userId     String
+  skillId    String
+  amount     Int
+  sourceType XpSourceType
+  /// Id of the quest/mission/assessment that produced the progress.
+  sourceId   String?
+  reason     String
+  createdAt  DateTime     @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, sourceType, sourceId])
+  @@index([userId, createdAt])
+  @@index([userId, skillId])
 }
 
 // ─── Achievements & streaks (spec §17–18) ───────────────────────────────────

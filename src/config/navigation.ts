@@ -1,5 +1,6 @@
 import {
   CompassIcon,
+  GitBranchIcon,
   HouseIcon,
   MapIcon,
   MessageCircleIcon,
@@ -38,6 +39,13 @@ export const primaryNav: readonly NavItem[] = [
     href: "/character",
     icon: UserRoundIcon,
     description: "Level, XP, stats and skills",
+    available: true,
+  },
+  {
+    label: "Skills",
+    href: "/skills",
+    icon: GitBranchIcon,
+    description: "Skill trees, unlocks and mastery",
     available: true,
   },
   {
