@@ -52,8 +52,8 @@ export const primaryNav: readonly NavItem[] = [
     label: "Journey",
     href: "/journey",
     icon: RouteIcon,
-    description: "Timeline, achievements and projects",
-    available: false,
+    description: "Challenges, streaks and achievements",
+    available: true,
   },
   {
     label: "Discover",

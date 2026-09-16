@@ -239,12 +239,17 @@ describe("quests feed the progression engine", () => {
       expect(ledger[0].amount).toBe(completion.xpReward);
     }
 
-    // Total XP is exactly the sum of what those completions were worth.
+    // Quest-sourced XP is exactly the sum of what those completions were
+    // worth. (Completions may also unlock achievements — separate source type.)
     const expected = completions.reduce((sum, c) => sum + c.xpReward, 0);
-    const total = await db.xpTransaction.aggregate({ where: { userId: user.id }, _sum: { amount: true } });
+    const total = await db.xpTransaction.aggregate({
+      where: { userId: user.id, sourceType: "QUEST_COMPLETION" },
+      _sum: { amount: true },
+    });
     expect(total._sum.amount).toBe(expected);
 
-    // Stats were awarded alongside, and sum to the same total.
+    // Stats were awarded alongside, and sum to the same total — achievement
+    // XP is area-neutral and moves no stats.
     const stats = await db.statTransaction.aggregate({ where: { userId: user.id }, _sum: { amount: true } });
     expect(stats._sum.amount).toBe(expected);
 
@@ -255,7 +260,10 @@ describe("quests feed the progression engine", () => {
 
     await quests.undoCompletion(user, quest.id);
     expect(await db.xpTransaction.count({ where: { userId: user.id, sourceId: quest.id } })).toBe(0);
-    const afterUndo = await db.xpTransaction.aggregate({ where: { userId: user.id }, _sum: { amount: true } });
+    const afterUndo = await db.xpTransaction.aggregate({
+      where: { userId: user.id, sourceType: "QUEST_COMPLETION" },
+      _sum: { amount: true },
+    });
     expect(afterUndo._sum.amount).toBe(expected);
   });
 });

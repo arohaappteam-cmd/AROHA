@@ -8,16 +8,20 @@ import { LevelCard } from "@/components/dashboard/level-card";
 import { JourneyHeader } from "@/components/quests/journey-header";
 import { JourneyPath } from "@/components/quests/journey-path";
 import { QuestCard } from "@/components/quests/quest-card";
+import { ShadowDebtCard } from "@/components/shadow/shadow-debt-card";
 import { greetingFor, hourInTimezone } from "@/modules/identity/timezones";
 import { getDashboardData } from "@/server/services/dashboard.service";
 import { getTodayJourney } from "@/server/services/quest-view.service";
+import { getShadowDebt } from "@/server/services/shadow.service";
 
 export default async function TodayPage() {
   // Per-user, per-request data: never prerender at build time.
   await connection();
-  // The journey first: it may generate today's quests, which the dashboard reads.
+  // The journey first: it may generate today's quests (and expire past ones),
+  // which the dashboard and shadow debt read.
   const journey = await getTodayJourney();
   const data = await getDashboardData();
+  const shadowDebt = await getShadowDebt(data.user);
   const greeting = greetingFor(hourInTimezone(new Date(), data.user.timezone));
 
   return (
@@ -44,6 +48,8 @@ export default async function TodayPage() {
       )}
 
       <SetupChecklist setup={data.setup} title="Help AROHA shape better quests for you" />
+
+      <ShadowDebtCard debt={shadowDebt} />
 
       <section aria-labelledby="path-title" className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">

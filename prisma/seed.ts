@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 import { LOCAL_USER_DEFAULT_NAME, LOCAL_USER_HANDLE } from "../src/config/site";
+import { syncAchievementCatalogue } from "../src/server/db/achievement-sync";
 import { createPrismaClient } from "../src/server/db/create-client";
 import { syncSkillCatalogue } from "../src/server/db/skill-sync";
 
@@ -22,6 +23,9 @@ async function main() {
   await syncSkillCatalogue(prisma);
   const [trees, skills] = await Promise.all([prisma.skillTree.count(), prisma.skill.count()]);
   console.log(`Skill catalogue ready: ${trees} trees, ${skills} skills`);
+
+  await syncAchievementCatalogue(prisma);
+  console.log(`Achievement catalogue ready: ${await prisma.achievement.count()} achievements`);
 }
 
 main()

@@ -10,6 +10,7 @@ import { db } from "@/server/db";
 import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { roadmapRepository } from "@/server/repositories/roadmap.repository";
+import { checkAchievements } from "@/server/services/achievement.service";
 
 /** Business-rule failures that are safe to show to the user. */
 export class GoalError extends Error {
@@ -79,7 +80,17 @@ export async function transitionGoal(userId: string, goalId: string, transition:
   if (!canTransition(goal.status, transition)) {
     throw new GoalError(`You can't ${transition} a goal that is ${goal.status.toLowerCase()}`);
   }
-  return db.goal.update({ where: { id: goalId }, data: applyTransition(goal.status, transition, new Date()) });
+  const updated = await db.goal.update({ where: { id: goalId }, data: applyTransition(goal.status, transition, new Date()) });
+
+  if (transition === "complete") {
+    // A finished goal may unlock achievements; never let that block the goal.
+    try {
+      await checkAchievements(userId);
+    } catch (error) {
+      console.error("Achievement check failed after goal completion", goalId, error);
+    }
+  }
+  return updated;
 }
 
 export async function setArchived(userId: string, goalId: string, archived: boolean) {

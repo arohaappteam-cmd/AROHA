@@ -60,14 +60,20 @@ export function JourneySummary({ data }: { data: DashboardData }) {
       <SummaryItem
         icon={FlameIcon}
         label="Best active streak"
-        value={data.bestStreak ? `${data.bestStreak.count} days` : "—"}
-        hint="Progress matters more than streaks"
+        value={data.bestStreak ? `${data.bestStreak.emoji} ${data.bestStreak.label} · ${data.bestStreak.count} days` : "—"}
+        hint={
+          data.bestStreak
+            ? `${data.bestStreak.lifetimeDays} days lifetime — that's the number that matters`
+            : "Progress matters more than streaks"
+        }
+        href="/journey"
       />
       <SummaryItem
         icon={TrophyIcon}
         label="Achievements"
         value={String(data.achievementCount)}
         hint="Unlocked milestones"
+        href="/journey"
       />
     </div>
   );

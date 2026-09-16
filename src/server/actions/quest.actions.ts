@@ -49,19 +49,34 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
 
   try {
     const user = await getCurrentUser();
-    const { missionCompleted, progression, skill } = await quests.completeQuest(user, parsed.data);
+    const result = await quests.completeQuest(user, parsed.data);
+    const { missionCompleted, progression, skill, challenges, achievements } = result;
     revalidatePath("/", "layout");
 
     const xp = progression.xpAwarded > 0 ? ` +${progression.xpAwarded} XP` : "";
-    const skillNote = skill?.awarded
-      ? skill.leveledUp
-        ? ` · ${skill.skillName} ${skill.mastered ? "mastered!" : `reached level ${skill.level}`}`
-        : ` · ${skill.skillName} +${skill.xpAwarded} skill XP`
-      : "";
+    const notes: string[] = [];
+    if (skill?.awarded) {
+      notes.push(
+        skill.leveledUp
+          ? `${skill.skillName} ${skill.mastered ? "mastered!" : `reached level ${skill.level}`}`
+          : `${skill.skillName} +${skill.xpAwarded} skill XP`,
+      );
+    }
+    for (const credit of challenges?.credited ?? []) {
+      notes.push(
+        credit.completed
+          ? `${credit.emoji} ${credit.title} complete! +${credit.xpAwarded} XP`
+          : `${credit.emoji} ${credit.title}: day ${credit.daysDone} of ${credit.targetDays}`,
+      );
+    }
+    for (const achievement of achievements) {
+      notes.push(`${achievement.emoji} Achievement: ${achievement.name}${achievement.xpReward > 0 ? ` +${achievement.xpReward} XP` : ""}`);
+    }
+    const suffix = notes.length > 0 ? ` · ${notes.join(" · ")}` : "";
     return {
       ok: true,
-      message: (missionCompleted ? `Quest complete — and the mission is done.${xp}` : `Quest complete.${xp}`) + skillNote,
-      data: { missionCompleted, progression, skill },
+      message: (missionCompleted ? `Quest complete — and the mission is done.${xp}` : `Quest complete.${xp}`) + suffix,
+      data: result,
     };
   } catch (error) {
     if (error instanceof quests.QuestError) return { ok: false, error: error.message };

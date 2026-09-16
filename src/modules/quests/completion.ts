@@ -1,3 +1,5 @@
+import type { UnlockedAchievement } from "@/modules/achievements/catalogue";
+import type { ChallengeQuestOutcome } from "@/modules/challenges/outcome";
 import type { ProgressionOutcome } from "@/modules/progression/outcome";
 import type { SkillAwardOutcome } from "@/modules/skills/outcome";
 
@@ -7,4 +9,8 @@ export type QuestCompletionPayload = {
   progression: ProgressionOutcome;
   /** Skill progress the quest produced; null when it trained no catalogued skill. */
   skill: SkillAwardOutcome | null;
+  /** Challenge days this quest earned, if any. */
+  challenges: ChallengeQuestOutcome | null;
+  /** Achievements this completion newly unlocked. */
+  achievements: UnlockedAchievement[];
 };

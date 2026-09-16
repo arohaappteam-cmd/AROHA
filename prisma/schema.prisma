@@ -112,8 +112,18 @@ enum XpSourceType {
   MISSION_COMPLETION
   MILESTONE_COMPLETION
   GOAL_COMPLETION
+  CHALLENGE_COMPLETION
   ACHIEVEMENT
   ADJUSTMENT
+}
+
+/// Challenge lifecycle. ENDED means the window closed short of the target —
+/// recorded without judgement; the days done still counted (spec §11, §18).
+enum ChallengeStatus {
+  ACTIVE
+  COMPLETED
+  ENDED
+  ABANDONED
 }
 
 enum ReflectionKind {
@@ -196,7 +206,7 @@ model User {
   skills           UserSkill[]
   skillXp          SkillXpTransaction[]
   achievements     UserAchievement[]
-  streaks          Streak[]
+  challenges       Challenge[]
   reflections      Reflection[]
 }
 
@@ -627,19 +637,61 @@ model UserAchievement {
   @@unique([userId, achievementId])
 }
 
-model Streak {
-  id               String    @id @default(cuid())
-  userId           String
-  /// What the streak tracks, e.g. "life-area:PHYSICAL" or "daily-quests".
-  key              String
-  currentCount     Int       @default(0)
-  longestCount     Int       @default(0)
-  lastActivityDate DateTime? @db.Date
-  updatedAt        DateTime  @updatedAt
+// Streaks are derived from the quest-completion ledger, never stored
+// (src/modules/streaks). Missing a day can therefore never delete anything.
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+// ─── Challenges (spec §11) ──────────────────────────────────────────────────
 
-  @@unique([userId, key])
+/// A temporary commitment started from a template, e.g. "7-Day Reading".
+/// Progress days are earned by completing matching quests — challenges never
+/// have their own checkbox, so they always reflect real action.
+model Challenge {
+  id           String          @id @default(cuid())
+  userId       String
+  /// Template the challenge came from (src/modules/challenges/catalogue.ts).
+  templateKey  String
+  title        String
+  description  String?
+  emoji        String          @default("🔥")
+  lifeArea     LifeArea
+  /// Length of the window, in calendar days.
+  durationDays Int
+  /// Days of real action needed to complete — less than the window, so a
+  /// missed day never sinks the whole attempt (spec §18).
+  targetDays   Int
+  /// Completion bonus, priced by the backend when the challenge starts.
+  xpReward     Int
+  /// First day of the window (calendar date in the user's timezone).
+  startDate    DateTime        @db.Date
+  status       ChallengeStatus @default(ACTIVE)
+  completedAt  DateTime?
+  /// When the window closed or the user set it down.
+  endedAt      DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days ChallengeDay[]
+
+  @@index([userId, status])
+}
+
+/// One earned day of a challenge, credited by a completed quest. Unique per
+/// (challenge, date): two matching quests in a day still earn one day.
+model ChallengeDay {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  /// Calendar date (user's timezone) the credit belongs to.
+  date        DateTime @db.Date
+  /// The quest whose completion earned the day; used to undo credit exactly.
+  questId     String?
+  createdAt   DateTime @default(now())
+
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, date])
+  @@index([userId, questId])
 }
 
 // ─── Reflection (spec §42, §45) ─────────────────────────────────────────────

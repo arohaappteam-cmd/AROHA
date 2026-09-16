@@ -26,7 +26,8 @@ export type AwardInput = {
   sourceType: XpSourceType;
   /** Makes the award idempotent: one transaction per source, ever. */
   sourceId: string;
-  lifeArea: LifeArea;
+  /** Null for area-neutral awards (achievements): XP only, no stat gains. */
+  lifeArea: LifeArea | null;
   reason: string;
 };
 
@@ -66,7 +67,7 @@ export async function awardXp(input: AwardInput): Promise<ProgressionOutcome> {
     return outcomeFor(totalXp._sum.amount ?? 0, 0, [], false);
   }
 
-  const attributes = attributeAwards(input.lifeArea, input.amount);
+  const attributes = input.lifeArea ? attributeAwards(input.lifeArea, input.amount) : [];
 
   try {
     return await db.$transaction(async (tx) => {

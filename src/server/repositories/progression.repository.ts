@@ -71,11 +71,4 @@ export const progressionRepository = {
   countCompletedQuests(userId: string) {
     return db.questCompletion.count({ where: { userId } });
   },
-
-  getLongestActiveStreak(userId: string) {
-    return db.streak.findFirst({
-      where: { userId, currentCount: { gt: 0 } },
-      orderBy: { currentCount: "desc" },
-    });
-  },
 };

@@ -1,10 +1,10 @@
 import "server-only";
 
 import { getCurrentUser } from "@/server/auth/current-user";
-import { progressionRepository } from "@/server/repositories/progression.repository";
 
 import { getCharacterSheet, type CharacterSheet } from "./character.service";
 import { getMajorGoalCard, type GoalCard } from "./goal-view.service";
+import { getBestActiveStreak } from "./streak.service";
 
 export type DashboardData = {
   user: { id: string; displayName: string; timezone: string };
@@ -16,7 +16,7 @@ export type DashboardData = {
   majorGoal: GoalCard | null;
   activeGoalCount: number;
   achievementCount: number;
-  bestStreak: { key: string; count: number } | null;
+  bestStreak: { label: string; emoji: string; count: number; lifetimeDays: number } | null;
 };
 
 export async function getDashboardData(): Promise<DashboardData> {
@@ -25,7 +25,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const [sheet, majorGoal, streak] = await Promise.all([
     getCharacterSheet(),
     getMajorGoalCard(user.id),
-    progressionRepository.getLongestActiveStreak(user.id),
+    getBestActiveStreak(user),
   ]);
 
   return {
@@ -38,6 +38,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     majorGoal,
     activeGoalCount: sheet.record.activeGoals,
     achievementCount: sheet.record.achievements,
-    bestStreak: streak ? { key: streak.key, count: streak.currentCount } : null,
+    bestStreak: streak
+      ? { label: streak.label, emoji: streak.emoji, count: streak.current, lifetimeDays: streak.lifetimeDays }
+      : null,
   };
 }

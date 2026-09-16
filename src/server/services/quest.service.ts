@@ -15,6 +15,7 @@ import {
   type QuestGenerator,
 } from "@/modules/quests/context";
 import { tagsOf } from "@/modules/quests/generator";
+import { baseTemplateKey } from "@/modules/quests/templates";
 import { readPayload } from "@/modules/quests/payload";
 import { questXpReward } from "@/modules/quests/rewards";
 import type { CompleteQuestInput, ReflectionInput } from "@/modules/quests/schemas";
@@ -24,6 +25,8 @@ import { progression } from "@/server/progression/port";
 import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { questRepository, type PricedDraft } from "@/server/repositories/quest.repository";
+import * as achievements from "@/server/services/achievement.service";
+import * as challenges from "@/server/services/challenge.service";
 import * as goals from "@/server/services/goal.service";
 import * as skills from "@/server/services/skill.service";
 
@@ -234,7 +237,8 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     title: quest.title,
   });
 
-  // Skill progress rides on top of the completion; it must never block it.
+  // Skills, challenges and achievements ride on top of the completion; none
+  // of them may ever block it.
   let skill: Awaited<ReturnType<typeof skills.questCompleted>> = null;
   try {
     skill = await skills.questCompleted({
@@ -250,7 +254,28 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     console.error("Skill award failed for quest", quest.id, error);
   }
 
-  return { missionCompleted, progression: outcome, skill };
+  let challengeOutcome: Awaited<ReturnType<typeof challenges.questCompleted>> | null = null;
+  try {
+    challengeOutcome = await challenges.questCompleted({
+      userId: user.id,
+      timezone: user.timezone,
+      questId: quest.id,
+      lifeArea: quest.lifeArea,
+      templateKey: baseTemplateKey(quest.templateKey),
+      skillTree: skill?.treeSlug ?? null,
+    });
+  } catch (error) {
+    console.error("Challenge credit failed for quest", quest.id, error);
+  }
+
+  let unlocked: Awaited<ReturnType<typeof achievements.checkAchievements>> = [];
+  try {
+    unlocked = await achievements.checkAchievements(user.id);
+  } catch (error) {
+    console.error("Achievement check failed for quest", quest.id, error);
+  }
+
+  return { missionCompleted, progression: outcome, skill, challenges: challengeOutcome, achievements: unlocked };
 }
 
 /** Add or edit the reflection on a completed quest (any day — it's the user's record). */
@@ -270,6 +295,8 @@ export async function undoCompletion(user: Pick<User, "id" | "timezone">, questI
   await questRepository.undoCompletion(quest.id, quest.startedAt ? "IN_PROGRESS" : "PENDING");
   await progression().questCompletionReverted({ userId: user.id, questId: quest.id });
   await skills.questCompletionReverted(user.id, quest.id);
+  // Challenge credit is withdrawn too; achievements, once earned, stay earned.
+  await challenges.questCompletionReverted(user, quest.id);
 }
 
 export async function skipQuest(user: Pick<User, "id" | "timezone">, questId: string, reason: string) {
