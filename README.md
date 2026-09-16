@@ -3,7 +3,7 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: Phase 5 — progression engine.**
+**Current state: Phase 7 — motivation systems.**
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -13,11 +13,14 @@ lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specific
 | 3 | Daily quests: generation, today's journey, quest lifecycle, learning architecture | Done |
 | 4 | AI Mentor: Claude provider, AI quest/roadmap/discovery generation, insights, graceful fallback | Done |
 | 5 | Progression: XP ledger, levels, attributes, level-up moments, XP history | Done |
-| — | Achievements, streaks, skill trees, end-of-day reflection, social | Not started |
+| 6 | Skills: 11 skill trees, per-skill levels, unlocks, visual tree, skill history | Done |
+| 7 | Motivation: achievements, streaks, challenges, Shadow Debt | Done |
+| — | Projects, Skill Passport, end-of-day reflection, Discover, social | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
-`/goals/[goalId]`, `/goals/[goalId]/edit`, `/mentor`, `/api/health`.
+`/goals/[goalId]`, `/goals/[goalId]/edit`, `/skills`, `/skills/[treeSlug]`,
+`/journey` (challenges, streaks, achievements), `/mentor`, `/api/health`.
 
 ## AI Mentor
 
@@ -49,10 +52,10 @@ shadcn/ui (Base UI) · Prisma 7 (`@prisma/adapter-pg`) · PostgreSQL · zod · V
 ## Getting started
 
 ```bash
-cp .env.example .env        # set DATABASE_URL
+cp .env.example .env        # set DATABASE_URL (needs Node.js 20+ and PostgreSQL)
 npm install                 # also runs `prisma generate`
 npm run db:migrate          # apply migrations
-npm run db:seed             # optional: create the local user
+npm run db:seed             # optional: local user + skill & achievement catalogues
 npm run dev                 # http://localhost:3000
 ```
 
@@ -81,6 +84,9 @@ src/
     shell/                app shell, sidebar + mobile navigation
     common/               page header, empty/error states
     dashboard/            home dashboard sections
+    skills/               skill tree cards, visual tree explorer, skill history
+    challenges/           challenge cards and challenge picker
+    streaks/ achievements/ shadow/   Journey page and Home sections
     character/            character avatar + dashboard cards
       edit/               client editors for the customize page
   config/                 env validation (server), site constants, navigation
@@ -93,10 +99,16 @@ src/
     quests/               categories, generation context & draft contract,
                           templates, seeded generator, learning providers +
                           lesson library, payloads, rewards, status rules
-  server/progression/     port the XP engine will implement (no-op for now)
+    skills/               skill catalogue, per-skill level curve, tree state
+                          (mastered/learning/available/locked), quest → skill matching
+    achievements/         achievement catalogue + deterministic unlock rules
+    streaks/              streaks derived from completion dates
+    challenges/           challenge templates, windows, grace days, pricing
+    shadow/               Shadow Debt computation and guidance
     analytics/            aggregations over progression data
   server/                 server-only code
-    db/                   Prisma client (singleton + factory)
+    db/                   Prisma client (singleton + factory), catalogue sync
+    progression/          XP engine + the port quests report completions to
     auth/                 current-user resolver (single local user for now)
     repositories/         data access, one per aggregate
     services/             use cases composed from repositories + modules
@@ -170,6 +182,28 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
   read-only; restore brings it back.
 - **Server Actions never trust their input.** Every action re-parses its
   arguments with the zod schemas in `modules/identity/schemas.ts`.
-- **AI provider is swappable.** `AI_PROVIDER` selects the implementation.
-  Only `mock` exists. It returns data only for tasks that register a handler,
-  and fails loudly for anything else.
+- **AI provider is swappable.** `AI_PROVIDER` selects the implementation:
+  `mock` (offline, deterministic) or `anthropic` (see AI Mentor above).
+- **Skills are data, and deliberately unequal.** Trees live in
+  `modules/skills/catalogue.ts` and are synced into `SkillTree`/`Skill` rows,
+  so AI-generated skill paths can add trees without new code. Each skill sets
+  its own XP cost, depth and unlock gate. Skill XP is an append-only
+  `SkillXpTransaction` ledger (the skill history); levels and states are
+  derived. A completed quest is routed to a skill by quest type → goal →
+  quest topic → interests → life area; a locked target pays into its
+  requirement chain instead. Undo revokes skill progress exactly.
+- **Achievements are earned, never granted.** Pure rules over real counts
+  (`modules/achievements`) are checked after every quest and goal completion.
+  Achievement XP is paid once and moves no stats; unlocks are never revoked.
+- **Streaks are secondary.** They're derived from completion dates, not
+  stored. A missed day ends a run, but lifetime days and the best run are
+  permanent — and lifetime days are what the UI leads with.
+- **Challenges are earned through quests.** Starting one from a template sets
+  a window with one grace day per week; each day is credited by completing a
+  matching quest (once per day). Target and bonus XP are priced by the
+  backend. At most two run at once. Setting one down keeps its days.
+- **Shadow Debt is a mirror, not a penalty.** It counts only core quests that
+  expired unacknowledged in the last 14 days (the second week at half
+  weight). Skips, deferrals and swaps don't count, days you didn't open the
+  app don't count, and it never touches XP. It shows gentle suggestions:
+  a lighter day, fewer commitments, reflection.
