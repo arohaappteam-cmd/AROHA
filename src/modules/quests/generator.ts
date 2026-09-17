@@ -52,6 +52,7 @@ export function difficultyFor(ctx: QuestGenerationContext, slot: QuestSlot, temp
   if (ctx.preferences.challengeLevel === "GENTLE") level -= 1;
   if (ctx.preferences.challengeLevel === "AMBITIOUS") level += 1;
   if (ctx.previousOutcomes[slot] === "SKIPPED") level -= 1;
+  if (ctx.lastReflection?.gentler) level -= 1;
   return DIFFICULTIES[Math.min(2, Math.max(0, level))];
 }
 
@@ -157,6 +158,7 @@ export function generateDay(ctx: QuestGenerationContext): GeneratedDay {
   const notes = [
     ctx.energy === "LOW" ? "lighter than usual — rest counts too" : null,
     ctx.energy === "HIGH" ? "a little more ambitious while the energy is there" : null,
+    ctx.lastReflection?.gentler ? "gentler after a rough day" : null,
     ctx.majorGoal?.next?.missionTitle ? `moving “${ctx.majorGoal.title}” forward` : null,
   ].filter(Boolean);
 

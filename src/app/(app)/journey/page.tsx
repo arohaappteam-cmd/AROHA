@@ -5,6 +5,7 @@ import { AchievementGrid } from "@/components/achievements/achievement-grid";
 import { ChallengeCard } from "@/components/challenges/challenge-card";
 import { StartChallenges } from "@/components/challenges/start-challenges";
 import { PageHeader } from "@/components/common/page-header";
+import { JourneyTabs } from "@/components/journey/journey-tabs";
 import { StreakCards } from "@/components/streaks/streak-cards";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAchievementsView } from "@/server/services/achievement.service";
@@ -31,6 +32,7 @@ export default async function JourneyPage() {
         title="The record of showing up"
         description="Challenges you take on, consistency you build, milestones you earn. All of it from real completed quests."
       />
+      <JourneyTabs active="/journey" />
 
       <section aria-labelledby="challenges-title" className="space-y-4">
         <div>

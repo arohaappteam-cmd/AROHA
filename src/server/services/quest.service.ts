@@ -27,7 +27,9 @@ import { identityRepository } from "@/server/repositories/identity.repository";
 import { questRepository, type PricedDraft } from "@/server/repositories/quest.repository";
 import * as achievements from "@/server/services/achievement.service";
 import * as challenges from "@/server/services/challenge.service";
+import * as experiments from "@/server/services/experiment.service";
 import * as goals from "@/server/services/goal.service";
+import { reflectionSignalFor } from "@/server/services/reflection.service";
 import * as skills from "@/server/services/skill.service";
 
 /** Business-rule failures that are safe to show to the user. */
@@ -102,13 +104,14 @@ export async function buildContext(user: Pick<User, "id" | "timezone">, date: st
   const day = parseDateOnly(date);
   const recentFrom = parseDateOnly(formatDateOnly(new Date(day.getTime() - RECENT_DAYS * 86_400_000)));
 
-  const [preferences, interests, lifeAreaRows, majorGoal, previousSet, recent] = await Promise.all([
+  const [preferences, interests, lifeAreaRows, majorGoal, previousSet, recent, lastReflection] = await Promise.all([
     identityRepository.findPreferences(user.id),
     identityRepository.listInterests(user.id),
     identityRepository.listLifeAreas(user.id),
     goalRepository.findMajorGoal(user.id),
     questRepository.findPreviousSet(user.id, day),
     questRepository.recentQuests(user.id, recentFrom, day),
+    reflectionSignalFor(user.id, day),
   ]);
 
   const previousOutcomes: Partial<Record<QuestSlot, QuestStatus>> = {};
@@ -156,6 +159,7 @@ export async function buildContext(user: Pick<User, "id" | "timezone">, date: st
     recentTemplateKeys: recent.map((q) => q.templateKey),
     previousOutcomes,
     carryOvers,
+    lastReflection,
   };
 }
 
@@ -168,7 +172,11 @@ export async function ensureTodaySet(user: Pick<User, "id" | "timezone">) {
   const date = parseDateOnly(today);
 
   const existing = await questRepository.findSet(user.id, date);
-  if (existing) return { set: existing, today };
+  if (existing) {
+    // Experiments started since the day was created still get today's quest.
+    const added = await experiments.ensureExperimentQuests(user, today, existing.id);
+    return { set: added ? (await questRepository.findSet(user.id, date))! : existing, today };
+  }
 
   const context = await buildContext(user, today, "NORMAL");
   const generated = await questGenerator().generateDay(context);
@@ -183,6 +191,9 @@ export async function ensureTodaySet(user: Pick<User, "id" | "timezone">) {
 
   const created = await questRepository.findSet(user.id, date);
   if (!created) throw new Error("Daily quest set could not be created");
+  if (await experiments.ensureExperimentQuests(user, today, created.id)) {
+    return { set: (await questRepository.findSet(user.id, date))!, today };
+  }
   return { set: created, today };
 }
 
@@ -268,6 +279,13 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     console.error("Challenge credit failed for quest", quest.id, error);
   }
 
+  let experiment: Awaited<ReturnType<typeof experiments.questCompleted>> = null;
+  try {
+    experiment = await experiments.questCompleted({ userId: user.id, timezone: user.timezone, questId: quest.id, payload: quest.payload });
+  } catch (error) {
+    console.error("Experiment credit failed for quest", quest.id, error);
+  }
+
   let unlocked: Awaited<ReturnType<typeof achievements.checkAchievements>> = [];
   try {
     unlocked = await achievements.checkAchievements(user.id);
@@ -275,7 +293,7 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     console.error("Achievement check failed for quest", quest.id, error);
   }
 
-  return { missionCompleted, progression: outcome, skill, challenges: challengeOutcome, achievements: unlocked };
+  return { missionCompleted, progression: outcome, skill, challenges: challengeOutcome, experiment, achievements: unlocked };
 }
 
 /** Add or edit the reflection on a completed quest (any day — it's the user's record). */
@@ -297,6 +315,7 @@ export async function undoCompletion(user: Pick<User, "id" | "timezone">, questI
   await skills.questCompletionReverted(user.id, quest.id);
   // Challenge credit is withdrawn too; achievements, once earned, stay earned.
   await challenges.questCompletionReverted(user, quest.id);
+  await experiments.questCompletionReverted(user.id, quest.id);
 }
 
 export async function skipQuest(user: Pick<User, "id" | "timezone">, questId: string, reason: string) {
@@ -357,8 +376,8 @@ export async function setDayEnergy(user: Pick<User, "id" | "timezone">, energy: 
     const draft = byslot.get(quest.slot as QuestSlot);
     if (draft) {
       await questRepository.replaceContent(quest.id, price(draft, quest.sortOrder));
-    } else if (!quest.isCore) {
-      // e.g. no bonus quest on a low-energy day.
+    } else if (quest.slot === "BONUS") {
+      // e.g. no bonus quest on a low-energy day. Experiment quests always stay.
       await questRepository.deleteQuest(quest.id);
     }
   }

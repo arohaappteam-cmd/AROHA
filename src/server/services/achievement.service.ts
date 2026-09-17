@@ -43,6 +43,8 @@ export async function gatherFacts(userId: string): Promise<AchievementFacts> {
     longestChallengeCompleted,
     skills,
     verified,
+    experimentsReviewed,
+    reflectionDays,
   ] = await Promise.all([
     achievementRepository.countQuestCompletions(userId),
     achievementRepository.countCompletedProjects(userId),
@@ -52,6 +54,8 @@ export async function gatherFacts(userId: string): Promise<AchievementFacts> {
     achievementRepository.longestCompletedChallenge(userId),
     achievementRepository.skillLevelInputs(userId),
     skillRepository.abilityVerifiedSkillIds(userId),
+    achievementRepository.countReviewedExperiments(userId),
+    achievementRepository.countReflectionDays(userId),
   ]);
 
   const levels = skills.map((skill) => ({
@@ -69,6 +73,8 @@ export async function gatherFacts(userId: string): Promise<AchievementFacts> {
     maxSkillLevel: levels.reduce((max, skill) => Math.max(max, skill.level), 0),
     // Mastery needs proof, never XP alone.
     hasMasteredSkill: levels.some((skill) => skill.level >= skill.maxLevel && verified.has(skill.skillId)),
+    experimentsReviewed,
+    reflectionDays,
   };
 }
 

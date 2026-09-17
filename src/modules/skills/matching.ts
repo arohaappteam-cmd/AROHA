@@ -54,17 +54,24 @@ export function matchQuestToSkill(ctx: QuestSkillContext): SkillMatch | null {
     }
   }
 
-  // 2. Quests advancing a goal train the tree the goal is about.
+  // 2. Experiment quests train the tree their experiment was set up for.
+  if (base.startsWith("experiment.")) {
+    const treeSlug = base.slice("experiment.".length);
+    if (SKILL_TREES.some((tree) => tree.slug === treeSlug)) return { treeSlug, skillSlug: null, reason: "experiment" };
+    return null;
+  }
+
+  // 3. Quests advancing a goal train the tree the goal is about.
   if (ctx.goalTitle) {
     const tree = treeMatching(ctx.goalTitle);
     if (tree) return { treeSlug: tree.slug, skillSlug: null, reason: `goal “${ctx.goalTitle}”` };
   }
 
-  // 3. The quest's own wording (e.g. an AI lesson titled around a topic).
+  // 4. The quest's own wording (e.g. an AI lesson titled around a topic).
   const tree = treeMatching(ctx.title);
   if (tree) return { treeSlug: tree.slug, skillSlug: null, reason: "quest topic" };
 
-  // 4. Learning and creative quests fall back to a matching interest;
+  // 5. Learning and creative quests fall back to a matching interest;
   //    creative quests only into creative trees, so “piano” doesn't absorb a reading quest.
   if (INTEREST_DRIVEN.includes(ctx.lifeArea)) {
     for (const interest of ctx.interests ?? []) {
@@ -73,7 +80,7 @@ export function matchQuestToSkill(ctx: QuestSkillContext): SkillMatch | null {
     }
   }
 
-  // 5. Areas with a natural home tree.
+  // 6. Areas with a natural home tree.
   const fallback = LIFE_AREA_TREES[ctx.lifeArea];
   if (fallback) return { treeSlug: fallback, skillSlug: null, reason: "life area" };
 

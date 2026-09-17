@@ -64,6 +64,24 @@ function PayloadCard({ quest }: { quest: QuestDetail }) {
     );
   }
 
+  if (payload.kind === "experiment") {
+    return (
+      <Link
+        href={`/discover/${payload.experimentId}`}
+        className="group flex items-center gap-3 rounded-xl border p-4 transition-colors hover:border-primary/50"
+      >
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-500/12 text-xl" aria-hidden>
+          🧪
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xs text-muted-foreground">Part of your experiment</span>
+          <span className="block font-medium">Practice day {payload.dayNumber}</span>
+          <span className="block text-sm text-muted-foreground">Completing it counts as a practice day.</span>
+        </span>
+      </Link>
+    );
+  }
+
   const content =
     payload.kind === "reading"
       ? { icon: BookOpenIcon, title: `${payload.pages} pages`, body: "Any book you're reading. Don't have one? Swap this quest for a micro-lesson." }

@@ -237,3 +237,21 @@ describe("quest rules", () => {
     });
   });
 });
+
+describe("learning from reflections", () => {
+  it("starts gentler the day after a rough reflection, and says why", () => {
+    const rank = { EASY: 0, MEDIUM: 1, HARD: 2 } as const;
+    const base = ctx({ preferences: { ...DEFAULT_PREFERENCES, challengeLevel: "AMBITIOUS" } });
+    const normal = generateDay(base);
+    const gentle = generateDay({
+      ...base,
+      lastReflection: { date: "2026-09-12", mood: "ROUGH", gentler: true, difficult: "Exhausted", differently: null },
+    });
+
+    const total = (day: ReturnType<typeof generateDay>) => day.drafts.reduce((sum, d) => sum + rank[d.difficulty], 0);
+    expect(total(gentle)).toBeLessThan(total(normal));
+    expect(gentle.rationale).toContain("gentler after a rough day");
+    // Same quests, only calibrated — a reflection never removes a core slot.
+    expect(gentle.drafts.filter((d) => d.isCore).map((d) => d.slot)).toEqual([...CORE_SLOTS]);
+  });
+});

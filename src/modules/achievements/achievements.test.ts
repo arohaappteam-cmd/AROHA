@@ -32,6 +32,9 @@ describe("achievement catalogue", () => {
     expect(slugsOf({ ...EMPTY_FACTS, readingQuestsCompleted: 10 })).toEqual(["first-book"]);
     expect(slugsOf({ ...EMPTY_FACTS, readingQuestsCompleted: 9 })).toEqual([]);
     expect(slugsOf({ ...EMPTY_FACTS, goalsCompleted: 1 })).toEqual(["first-major-goal"]);
+    expect(slugsOf({ ...EMPTY_FACTS, experimentsReviewed: 1 })).toEqual(["curious-mind"]);
+    expect(slugsOf({ ...EMPTY_FACTS, reflectionDays: 6 })).toEqual([]);
+    expect(slugsOf({ ...EMPTY_FACTS, reflectionDays: 7 })).toEqual(["reflective-week"]);
     expect(slugsOf({ ...EMPTY_FACTS, maxSkillLevel: 3 })).toEqual(["skill-milestone"]);
     expect(slugsOf({ ...EMPTY_FACTS, hasMasteredSkill: true, maxSkillLevel: 5 })).toEqual(
       expect.arrayContaining(["skill-milestone", "skill-mastery"]),

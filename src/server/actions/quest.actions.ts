@@ -50,7 +50,7 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
   try {
     const user = await getCurrentUser();
     const result = await quests.completeQuest(user, parsed.data);
-    const { missionCompleted, progression, skill, challenges, achievements } = result;
+    const { missionCompleted, progression, skill, challenges, experiment, achievements } = result;
     revalidatePath("/", "layout");
 
     const xp = progression.xpAwarded > 0 ? ` +${progression.xpAwarded} XP` : "";
@@ -68,6 +68,9 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
           ? `${credit.emoji} ${credit.title} complete! +${credit.xpAwarded} XP`
           : `${credit.emoji} ${credit.title}: day ${credit.daysDone} of ${credit.targetDays}`,
       );
+    }
+    if (experiment) {
+      notes.push(`🧪 ${experiment.daysPracticed} practice day${experiment.daysPracticed === 1 ? "" : "s"} in your experiment`);
     }
     for (const achievement of achievements) {
       notes.push(`${achievement.emoji} Achievement: ${achievement.name}${achievement.xpReward > 0 ? ` +${achievement.xpReward} XP` : ""}`);

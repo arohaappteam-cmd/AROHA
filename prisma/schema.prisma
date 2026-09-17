@@ -115,6 +115,7 @@ enum XpSourceType {
   CHALLENGE_COMPLETION
   PROJECT_COMPLETION
   ASSESSMENT_PASSED
+  EXPERIMENT_COMPLETION
   ACHIEVEMENT
   ADJUSTMENT
 }
@@ -235,6 +236,38 @@ enum AssessmentEvaluator {
   SELF_REVIEW
 }
 
+/// How a day felt, from the end-of-day reflection (spec §42, §45).
+enum DayMood {
+  ROUGH
+  OKAY
+  GOOD
+  GREAT
+}
+
+/// Experiment lifecycle (spec §41). REVIEW_DUE: the window closed (or the user
+/// wrapped up early) and the end-of-experiment questions are waiting.
+enum ExperimentStatus {
+  ACTIVE
+  REVIEW_DUE
+  REVIEWED
+  ABANDONED
+}
+
+/// "Did you improve?" — honest, non-numeric answers.
+enum ExperimentImprovement {
+  NOT_REALLY
+  A_LITTLE
+  NOTICEABLY
+  A_LOT
+}
+
+/// "Do you want to continue?"
+enum ExperimentDecision {
+  MAKE_IT_A_GOAL
+  KEEP_EXPLORING
+  NOT_FOR_NOW
+}
+
 // ─── Identity ───────────────────────────────────────────────────────────────
 
 model User {
@@ -270,6 +303,8 @@ model User {
   evidence         Evidence[]
   assessments      AssessmentAttempt[]
   reflections      Reflection[]
+  journalEntries   JournalEntry[]
+  experiments      Experiment[]
 }
 
 /// The user's living AROHA character (spec §7, §30). Holds game-facing
@@ -375,6 +410,7 @@ model Goal {
   missions         Mission[]
   roadmapRevisions RoadmapRevision[]
   quests           Quest[]
+  experiments      Experiment[]
 
   @@index([userId, status])
   @@index([userId, archivedAt])
@@ -874,24 +910,112 @@ model ChallengeDay {
   @@index([userId, questId])
 }
 
-// ─── Reflection (spec §42, §45) ─────────────────────────────────────────────
+// ─── Reflection & journal (spec §42, §45) ──────────────────────────────────
 
+/// A structured reflection. DAILY reflections are the end-of-day questions,
+/// one per user per calendar day. The user's words and the AI's summary are
+/// stored separately, and the summary records where it came from.
 model Reflection {
-  id        String         @id @default(cuid())
+  id            String         @id @default(cuid())
+  userId        String
+  kind          ReflectionKind
+  /// Calendar date the reflection is about (user's timezone).
+  date          DateTime       @db.Date
+  mood          DayMood?
+  learned       String?
+  wentWell      String?
+  difficult     String?
+  proud         String?
+  differently   String?
+  /// Legacy free-text "what should tomorrow look like?".
+  tomorrow      String?
+  aiSummary     String?
+  /// One gentle, concrete idea for tomorrow, from the summary.
+  aiSuggestion  String?
+  /// "ai" or "fallback" — shown next to the summary.
+  summarySource String?
+  summarizedAt  DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, kind, date])
+  @@index([userId, date])
+}
+
+/// A private journal entry. Visible only to its owner: never shown on the
+/// passport or timeline, and never sent to AI.
+model JournalEntry {
+  id        String    @id @default(cuid())
   userId    String
-  kind      ReflectionKind
-  /// Calendar date the reflection is about.
-  date      DateTime       @db.Date
-  wentWell  String?
-  learned   String?
-  difficult String?
-  tomorrow  String?
-  /// AI-written summary, stored separately from the user's own words.
-  aiSummary String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  /// Calendar date the entry belongs to (user's timezone).
+  date      DateTime  @db.Date
+  title     String?
+  body      String
+  mood      DayMood?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
+}
+
+// ─── Experiments (spec §41) ─────────────────────────────────────────────────
+
+/// Trying something for a while without committing to it. An active
+/// experiment adds a short daily quest; completing it earns a practice day.
+model Experiment {
+  id           String                 @id @default(cuid())
+  userId       String
+  /// Template key (src/modules/experiments/catalogue.ts) or "custom".
+  templateKey  String
+  title        String
+  /// What's being tried, e.g. "photography". Used in quests and matching.
+  topic        String
+  description  String?
+  emoji        String                 @default("🧪")
+  lifeArea     LifeArea
+  /// Skill tree the practice feeds, when one fits.
+  skillTree    String?
+  durationDays Int
+  /// Minutes of practice suggested per day.
+  dailyMinutes Int                    @default(20)
+  startDate    DateTime               @db.Date
+  status       ExperimentStatus       @default(ACTIVE)
+  endedAt      DateTime?
+  // End-of-experiment review (spec §41)
+  enjoyment    Int?
+  interest     Int?
+  improvement  ExperimentImprovement?
+  decision     ExperimentDecision?
+  learned      String?
+  reviewedAt   DateTime?
+  xpAwarded    Int                    @default(0)
+  /// The goal created when the user chose to make it a goal.
+  goalId       String?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal?           @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  days ExperimentDay[]
+
+  @@index([userId, status])
+}
+
+/// One practice day, earned by completing that day's experiment quest.
+model ExperimentDay {
+  id           String   @id @default(cuid())
+  experimentId String
+  userId       String
+  date         DateTime @db.Date
+  questId      String?
+  createdAt    DateTime @default(now())
+
+  experiment Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+
+  @@unique([experimentId, date])
+  @@index([userId, questId])
 }

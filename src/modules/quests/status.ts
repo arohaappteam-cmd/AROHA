@@ -23,8 +23,10 @@ export function allowedActions(quest: QuestState, isToday: boolean): QuestAction
       const actions: QuestAction[] = ["start", "complete", "skip"];
       // A quest can move to tomorrow once; after that, skipping is kinder.
       if (quest.isCore && !quest.carriedFromId) actions.push("defer");
-      // The goal slot always follows the roadmap, so there's nothing to swap to.
-      if (quest.slot !== "PERSONAL_GOAL" && !quest.carriedFromId && quest.swapCount < MAX_SWAPS_PER_QUEST) {
+      // The goal slot follows the roadmap and experiment quests follow their
+      // experiment, so there's nothing to swap either of them to.
+      const followsAPlan = quest.slot === "PERSONAL_GOAL" || quest.slot.startsWith("EXPERIMENT");
+      if (!followsAPlan && !quest.carriedFromId && quest.swapCount < MAX_SWAPS_PER_QUEST) {
         actions.push("swap");
       }
       return actions;

@@ -21,6 +21,10 @@ export type AchievementFacts = {
   maxSkillLevel: number;
   /** A skill reached its final level AND ability was demonstrated in it. */
   hasMasteredSkill: boolean;
+  /** Experiments taken to the end and reviewed. */
+  experimentsReviewed: number;
+  /** Days with an end-of-day reflection. */
+  reflectionDays: number;
 };
 
 export const EMPTY_FACTS: AchievementFacts = {
@@ -32,6 +36,8 @@ export const EMPTY_FACTS: AchievementFacts = {
   longestChallengeCompleted: 0,
   maxSkillLevel: 0,
   hasMasteredSkill: false,
+  experimentsReviewed: 0,
+  reflectionDays: 0,
 };
 
 export type AchievementSpec = {
@@ -99,6 +105,24 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     hint: "Pass a practical task or project assessment.",
     xpReward: 50,
     earned: (facts) => facts.abilityDemonstrated,
+  },
+  {
+    slug: "curious-mind",
+    name: "Curious Mind",
+    description: "You tried something new, saw it through, and asked yourself honestly how it went.",
+    emoji: "🧪",
+    hint: "Finish an experiment and answer its review.",
+    xpReward: 50,
+    earned: (facts) => facts.experimentsReviewed >= 1,
+  },
+  {
+    slug: "reflective-week",
+    name: "Seven Reflections",
+    description: "Seven days you stopped to ask what the day taught you.",
+    emoji: "🪞",
+    hint: "Write an end-of-day reflection on 7 different days.",
+    xpReward: 50,
+    earned: (facts) => facts.reflectionDays >= 7,
   },
   {
     slug: "first-book",

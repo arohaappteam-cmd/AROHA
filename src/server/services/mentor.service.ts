@@ -21,6 +21,7 @@ import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { mentorRepository } from "@/server/repositories/mentor.repository";
 import { progressionRepository } from "@/server/repositories/progression.repository";
+import { reflectionRepository } from "@/server/repositories/reflection.repository";
 
 const DAY_MS = 86_400_000;
 const REFLECTION_LIMIT = 6;
@@ -47,7 +48,7 @@ export async function buildMentorContext(user: Pick<User, "id" | "displayName" |
   const todayDate = parseDateOnly(today);
   const from = parseDateOnly(formatDateOnly(new Date(todayDate.getTime() - 6 * DAY_MS)));
 
-  const [preferences, interests, currentGoals, major, totalXp, attributes, outcomes, reflections, skips] =
+  const [preferences, interests, currentGoals, major, totalXp, attributes, outcomes, reflections, skips, dailyReflections] =
     await Promise.all([
       identityRepository.findPreferences(user.id),
       identityRepository.listInterests(user.id),
@@ -58,6 +59,7 @@ export async function buildMentorContext(user: Pick<User, "id" | "displayName" |
       mentorRepository.questOutcomes(user.id, from, todayDate),
       mentorRepository.recentReflections(user.id, REFLECTION_LIMIT),
       mentorRepository.skipReasons(user.id, from, todayDate),
+      reflectionRepository.listRecentDaily(user.id, 5),
     ]);
 
   const core = outcomes.filter((o) => o.isCore);
@@ -119,6 +121,13 @@ export async function buildMentorContext(user: Pick<User, "id" | "displayName" |
         .map((s) => s.skipReason)
         .filter((r): r is string => r !== null),
     },
+    dailyReflections: dailyReflections.map((r) => ({
+      date: formatDateOnly(r.date),
+      mood: r.mood,
+      learned: r.learned,
+      difficult: r.difficult,
+      differently: r.differently,
+    })),
   };
 }
 

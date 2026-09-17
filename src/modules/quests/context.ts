@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { DayEnergy, LifeArea, QuestDifficulty, QuestStatus } from "@/generated/prisma/enums";
 import type { Preferences } from "@/modules/identity/preferences";
+import type { ReflectionSignal } from "@/modules/reflection/reflection";
 
 import type { QuestSlot } from "./categories";
 import { questPayloadSchema } from "./payload";
@@ -31,6 +32,8 @@ export type QuestGenerationContext = {
   previousOutcomes: Partial<Record<QuestSlot, QuestStatus>>;
   /** Quests the user deferred from their previous day, to offer again. */
   carryOvers: CarryOver[];
+  /** What the most recent end-of-day reflection said (spec §45). */
+  lastReflection?: ReflectionSignal | null;
 };
 
 export type CarryOver = { questId: string; draft: QuestDraft };

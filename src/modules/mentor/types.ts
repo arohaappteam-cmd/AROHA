@@ -35,6 +35,8 @@ export type MentorContext = {
     /** Skip reasons seen in the last 7 days, most common first. */
     commonSkipReasons: string[];
   };
+  /** Recent end-of-day reflections, newest first. The private journal is never included. */
+  dailyReflections?: { date: string; mood: string | null; learned: string | null; difficult: string | null; differently: string | null }[];
 };
 
 export type MentorGoal = {

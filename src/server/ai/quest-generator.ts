@@ -43,6 +43,10 @@ export const aiQuestGenerator: QuestGenerator = {
           interests: ctx.interests.map((i) => i.label),
           focusAreas: ctx.focusAreas,
           previousOutcomes: ctx.previousOutcomes,
+          // The user's own end-of-day words — tomorrow should learn from today.
+          lastReflection: ctx.lastReflection
+            ? { mood: ctx.lastReflection.mood, difficult: ctx.lastReflection.difficult, differently: ctx.lastReflection.differently }
+            : null,
           quests: editable.map((d) => ({ slot: d.slot, lifeArea: d.lifeArea, currentTitle: d.title })),
         },
       });

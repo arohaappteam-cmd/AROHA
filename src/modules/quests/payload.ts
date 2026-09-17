@@ -33,6 +33,12 @@ export const questPayloadSchema = z.discriminatedUnion("kind", [
     missionId: z.string().max(64).nullable(),
     href: z.string().max(200),
   }),
+  /** A practice day of one of the user's experiments. */
+  z.object({
+    kind: z.literal("experiment"),
+    experimentId: z.string().max(64),
+    dayNumber: z.number().int().min(1).max(60),
+  }),
   /** Writing or reflection prompts. */
   z.object({ kind: z.literal("prompts"), prompts: z.array(z.string().trim().min(1).max(200)).min(1).max(5) }),
 ]);

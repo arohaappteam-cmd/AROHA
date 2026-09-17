@@ -11,6 +11,8 @@ export type QuestCompletionPayload = {
   skill: SkillAwardOutcome | null;
   /** Challenge days this quest earned, if any. */
   challenges: ChallengeQuestOutcome | null;
+  /** The experiment practice day this quest earned, if it was an experiment quest. */
+  experiment: { experimentTitle: string; daysPracticed: number } | null;
   /** Achievements this completion newly unlocked. */
   achievements: UnlockedAchievement[];
 };

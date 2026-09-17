@@ -13,6 +13,14 @@ export const achievementRepository = {
     return db.questCompletion.count({ where: { userId } });
   },
 
+  countReviewedExperiments(userId: string) {
+    return db.experiment.count({ where: { userId, status: "REVIEWED" } });
+  },
+
+  countReflectionDays(userId: string) {
+    return db.reflection.count({ where: { userId, kind: "DAILY" } });
+  },
+
   countCompletedProjects(userId: string) {
     return db.project.count({ where: { userId, status: "COMPLETED" } });
   },

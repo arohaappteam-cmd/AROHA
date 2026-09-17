@@ -3,7 +3,7 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: Phase 8 — projects, assessments and the Skill Passport.**
+**Current state: Phase 9 — journal, reflection, life timeline and experiments.**
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -16,7 +16,8 @@ lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specific
 | 6 | Skills: 11 skill trees, per-skill levels, unlocks, visual tree, skill history | Done |
 | 7 | Motivation: achievements, streaks, challenges, Shadow Debt | Done |
 | 8 | Projects with evidence, assessments (quiz / practical / project review, AI-assisted), proof of skill, Skill Passport | Done |
-| — | End-of-day reflection, Discover, social | Not started |
+| 9 | Private journal, end-of-day reflection with AI summary, life timeline, Experiment Mode | Done |
+| — | Weekly review, social layer | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
@@ -24,6 +25,9 @@ Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/journey` (challenges, streaks, achievements), `/projects`, `/projects/new`,
 `/projects/[projectId]`, `/projects/[projectId]/edit`, `/assessments`,
 `/assessments/[assessmentKey]`, `/assessments/attempts/[attemptId]`, `/passport`,
+`/journal`, `/journal/reflect` (`?date=`), `/journal/new`, `/journal/[entryId]`,
+`/journal/[entryId]/edit`, `/journey/timeline` (`?kind=`), `/discover`,
+`/discover/[experimentId]`,
 `/mentor`, `/api/health`.
 
 ## AI Mentor
@@ -95,6 +99,9 @@ src/
     assessments/          quiz form, rubric submission form
     proof/                proof-tier and evaluator badges
     passport/             Skill Passport hero, mastery areas, ledger, proof wall
+    reflection/           reflection form and summary, journal forms, Home card
+    experiments/          experiment cards, templates, custom form, review
+    journey/              Journey tabs (challenges & achievements / timeline)
     character/            character avatar + dashboard cards
       edit/               client editors for the customize page
   config/                 env validation (server), site constants, navigation
@@ -117,6 +124,12 @@ src/
     assessments/          catalogue (quizzes, practicals), grading, rubric scoring,
                           AI evaluation contract, submission schemas
     proof/                proof tiers: practiced → tested → demonstrated → mastered
+    reflection/           end-of-day questions, fallback summary, reflection
+                          signals for tomorrow, journal entry schema
+    experiments/          experiment templates, window, daily quest content,
+                          review questions and XP
+    timeline/             timeline events, skill/level milestones replayed
+                          from the ledgers, year/month grouping
     analytics/            aggregations over progression data
   server/                 server-only code
     db/                   Prisma client (singleton + factory), catalogue sync
@@ -240,3 +253,25 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
   `(sourceType, sourceId)` across all users, so a `sourceId` must identify one
   user's action: a quest, project or challenge id, or `userId:key` for things
   every user can earn (achievements, assessments).
+- **The journal is private.** Journal entries are reachable only through
+  `journal.service`, every query is scoped to the owner, and they never appear
+  on the passport or timeline, in the mentor's context, or in anything sent to
+  AI.
+- **Reflections close the daily loop.** One end-of-day reflection per day
+  (five optional questions plus a mood), editable for 7 days. Saving it writes
+  a summary and one idea for tomorrow — from the AI when configured, otherwise
+  built only from the user's own words and the day's quest record, and always
+  labelled with its source. The latest reflection shapes the next day: a rough
+  day lowers quest difficulty, and the reflection text is passed to the AI
+  quest generator and the mentor.
+- **Experiments live inside the day.** An active experiment adds one short
+  practice quest per day (slot `EXPERIMENT` / `EXPERIMENT_2`, never swapped,
+  deferred or removed by energy changes). Completing it earns a practice day
+  and trains the related skill tree. When the window ends (or the user wraps up
+  early) the review asks: did you enjoy it, were you interested, did you
+  improve, what did you learn, do you want to continue? The review pays XP per
+  day tried, and "Make it a goal" creates a goal with a roadmap.
+- **The timeline is derived, not stored.** Goals, projects, achievements,
+  challenges, experiments, experiences, skill milestones (started, level 3, top
+  level, demonstrated) and character tiers are read from existing records and
+  replayed ledgers, grouped by year and month in the user's timezone.
