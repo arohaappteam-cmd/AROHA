@@ -13,9 +13,13 @@ export const achievementRepository = {
     return db.questCompletion.count({ where: { userId } });
   },
 
-  async hasEvidenceCompletion(userId: string): Promise<boolean> {
-    const found = await db.questCompletion.findFirst({
-      where: { userId, evidence: { not: Prisma.DbNull } },
+  countCompletedProjects(userId: string) {
+    return db.project.count({ where: { userId, status: "COMPLETED" } });
+  },
+
+  async abilityDemonstrated(userId: string): Promise<boolean> {
+    const found = await db.assessmentAttempt.findFirst({
+      where: { userId, outcome: "PASSED", kind: { in: ["PRACTICAL", "PROJECT"] } },
       select: { id: true },
     });
     return found !== null;
@@ -40,7 +44,7 @@ export const achievementRepository = {
   },
 
   /** Per-skill XP with each skill's own curve, for the skill-based rules. */
-  async skillLevelInputs(userId: string): Promise<{ xp: number; baseXp: number; maxLevel: number }[]> {
+  async skillLevelInputs(userId: string): Promise<{ skillId: string; xp: number; baseXp: number; maxLevel: number }[]> {
     const rows = await db.skillXpTransaction.groupBy({
       by: ["skillId"],
       where: { userId },
@@ -54,7 +58,7 @@ export const achievementRepository = {
     const bySkill = new Map(skills.map((skill) => [skill.id, skill]));
     return rows.flatMap((row) => {
       const skill = bySkill.get(row.skillId);
-      return skill ? [{ xp: row._sum.amount ?? 0, baseXp: skill.baseXp, maxLevel: skill.maxLevel }] : [];
+      return skill ? [{ skillId: skill.id, xp: row._sum.amount ?? 0, baseXp: skill.baseXp, maxLevel: skill.maxLevel }] : [];
     });
   },
 

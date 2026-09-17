@@ -3,7 +3,7 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: Phase 7 — motivation systems.**
+**Current state: Phase 8 — projects, assessments and the Skill Passport.**
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -15,12 +15,16 @@ lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specific
 | 5 | Progression: XP ledger, levels, attributes, level-up moments, XP history | Done |
 | 6 | Skills: 11 skill trees, per-skill levels, unlocks, visual tree, skill history | Done |
 | 7 | Motivation: achievements, streaks, challenges, Shadow Debt | Done |
-| — | Projects, Skill Passport, end-of-day reflection, Discover, social | Not started |
+| 8 | Projects with evidence, assessments (quiz / practical / project review, AI-assisted), proof of skill, Skill Passport | Done |
+| — | End-of-day reflection, Discover, social | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
 `/goals/[goalId]`, `/goals/[goalId]/edit`, `/skills`, `/skills/[treeSlug]`,
-`/journey` (challenges, streaks, achievements), `/mentor`, `/api/health`.
+`/journey` (challenges, streaks, achievements), `/projects`, `/projects/new`,
+`/projects/[projectId]`, `/projects/[projectId]/edit`, `/assessments`,
+`/assessments/[assessmentKey]`, `/assessments/attempts/[attemptId]`, `/passport`,
+`/mentor`, `/api/health`.
 
 ## AI Mentor
 
@@ -87,6 +91,10 @@ src/
     skills/               skill tree cards, visual tree explorer, skill history
     challenges/           challenge cards and challenge picker
     streaks/ achievements/ shadow/   Journey page and Home sections
+    projects/             project form, skill picker, milestones, evidence
+    assessments/          quiz form, rubric submission form
+    proof/                proof-tier and evaluator badges
+    passport/             Skill Passport hero, mastery areas, ledger, proof wall
     character/            character avatar + dashboard cards
       edit/               client editors for the customize page
   config/                 env validation (server), site constants, navigation
@@ -105,6 +113,10 @@ src/
     streaks/              streaks derived from completion dates
     challenges/           challenge templates, windows, grace days, pricing
     shadow/               Shadow Debt computation and guidance
+    projects/             categories, lifecycle rules, XP pricing, input schemas
+    assessments/          catalogue (quizzes, practicals), grading, rubric scoring,
+                          AI evaluation contract, submission schemas
+    proof/                proof tiers: practiced → tested → demonstrated → mastered
     analytics/            aggregations over progression data
   server/                 server-only code
     db/                   Prisma client (singleton + factory), catalogue sync
@@ -207,3 +219,24 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
   weight). Skips, deferrals and swaps don't count, days you didn't open the
   app don't count, and it never touches XP. It shows gentle suggestions:
   a lighter day, fewer commitments, reflection.
+- **Projects pay only with proof.** A project can't be completed without at
+  least one piece of evidence (a link, code, document, media or a written
+  note) and one skill. Completion pays character XP (grows with finished
+  milestones and evidence) and XP into every skill it used, priced by each
+  skill's own cost. Reopening takes that payment back exactly; evidence stays.
+- **Assessments: understanding vs ability.** Quizzes are graded on the server
+  against an answer key the page never sees (answers are revealed only after a
+  pass). Practical tasks and project reviews are scored against a weighted
+  rubric — by the AI when configured, otherwise by the user's own ratings with
+  evidence attached. Either way the backend applies the pass mark, and every
+  result is labelled Auto-graded, AI-reviewed or Self-reviewed. AI output that
+  doesn't score exactly the rubric is discarded. Retakes are free; only a first
+  pass pays XP.
+- **Mastery takes proof.** Lessons and quests build practice XP, but a skill at
+  its top level only becomes Mastered after a passed practical task or project
+  review in it. The Skill Passport shows each skill's proof tier — Practiced,
+  Tested, Demonstrated, Mastered — next to the evidence behind it.
+- **Ledger source keys are global.** `XpTransaction` is unique on
+  `(sourceType, sourceId)` across all users, so a `sourceId` must identify one
+  user's action: a quest, project or challenge id, or `userId:key` for things
+  every user can earn (achievements, assessments).

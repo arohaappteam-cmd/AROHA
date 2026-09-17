@@ -26,7 +26,9 @@ describe("achievement catalogue", () => {
     expect(slugsOf({ ...EMPTY_FACTS, questsCompleted: 1 })).toEqual(["first-quest"]);
     expect(slugsOf({ ...EMPTY_FACTS, questsCompleted: 25 })).toEqual(["first-quest", "quests-25"]);
     expect(slugsOf({ ...EMPTY_FACTS, questsCompleted: 100 })).toContain("quests-100");
-    expect(slugsOf({ ...EMPTY_FACTS, hasEvidenceCompletion: true })).toEqual(["first-project"]);
+    expect(slugsOf({ ...EMPTY_FACTS, projectsCompleted: 1 })).toEqual(["first-project"]);
+    expect(slugsOf({ ...EMPTY_FACTS, projectsCompleted: 3 })).toEqual(["first-project", "builder"]);
+    expect(slugsOf({ ...EMPTY_FACTS, abilityDemonstrated: true })).toEqual(["proof-over-claims"]);
     expect(slugsOf({ ...EMPTY_FACTS, readingQuestsCompleted: 10 })).toEqual(["first-book"]);
     expect(slugsOf({ ...EMPTY_FACTS, readingQuestsCompleted: 9 })).toEqual([]);
     expect(slugsOf({ ...EMPTY_FACTS, goalsCompleted: 1 })).toEqual(["first-major-goal"]);

@@ -162,6 +162,18 @@ describe("achievements", () => {
     expect(await db.xpTransaction.count({ where: { userId, sourceType: "ACHIEVEMENT" } })).toBe(1);
   });
 
+  it("pays every user for the same achievement, not just the first to unlock it", async () => {
+    const second = await db.user.create({ data: { handle: `${HANDLE}-second`, displayName: "Second", timezone: "UTC" } });
+    const quest = await db.quest.create({
+      data: { userId: second.id, slot: "SOCIAL", lifeArea: "SOCIAL", templateKey: "social.call", title: "Call", xpReward: 20, source: "SYSTEM", status: "COMPLETED" },
+    });
+    await db.questCompletion.create({ data: { questId: quest.id, userId: second.id, xpReward: 20 } });
+
+    expect((await checkAchievements(second.id)).map((a) => a.slug)).toEqual(["first-quest"]);
+    expect(await db.xpTransaction.count({ where: { userId: second.id, sourceType: "ACHIEVEMENT" } })).toBe(1);
+    expect(await db.xpTransaction.count({ where: { userId, sourceType: "ACHIEVEMENT" } })).toBe(1);
+  });
+
   it("unlocks the 7-day challenge achievement from a completed 7-day window", async () => {
     const overview = await challenges.getChallengesOverview(user);
     const reading = overview.active.find((challenge) => challenge.templateKey === "reading-7")!;

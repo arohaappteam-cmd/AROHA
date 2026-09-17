@@ -11,6 +11,7 @@ import { db } from "@/server/db";
 import { syncAchievementCatalogue } from "@/server/db/achievement-sync";
 import { awardXp } from "@/server/progression/engine";
 import { achievementRepository } from "@/server/repositories/achievement.repository";
+import { skillRepository } from "@/server/repositories/skill.repository";
 
 /**
  * Achievements (spec §17). Unlocks are checked by deterministic backend
@@ -33,25 +34,41 @@ export function ensureAchievementCatalogue(): Promise<void> {
 
 /** Gathers every fact the rules are allowed to see. All backend-derived. */
 export async function gatherFacts(userId: string): Promise<AchievementFacts> {
-  const [questsCompleted, hasEvidenceCompletion, readingQuestsCompleted, goalsCompleted, longestChallengeCompleted, skills] =
-    await Promise.all([
-      achievementRepository.countQuestCompletions(userId),
-      achievementRepository.hasEvidenceCompletion(userId),
-      achievementRepository.countReadingCompletions(userId),
-      achievementRepository.countCompletedGoals(userId),
-      achievementRepository.longestCompletedChallenge(userId),
-      achievementRepository.skillLevelInputs(userId),
-    ]);
+  const [
+    questsCompleted,
+    projectsCompleted,
+    abilityDemonstrated,
+    readingQuestsCompleted,
+    goalsCompleted,
+    longestChallengeCompleted,
+    skills,
+    verified,
+  ] = await Promise.all([
+    achievementRepository.countQuestCompletions(userId),
+    achievementRepository.countCompletedProjects(userId),
+    achievementRepository.abilityDemonstrated(userId),
+    achievementRepository.countReadingCompletions(userId),
+    achievementRepository.countCompletedGoals(userId),
+    achievementRepository.longestCompletedChallenge(userId),
+    achievementRepository.skillLevelInputs(userId),
+    skillRepository.abilityVerifiedSkillIds(userId),
+  ]);
 
-  const levels = skills.map((skill) => ({ level: skillLevelForXp(skill.baseXp, skill.maxLevel, skill.xp), maxLevel: skill.maxLevel }));
+  const levels = skills.map((skill) => ({
+    skillId: skill.skillId,
+    level: skillLevelForXp(skill.baseXp, skill.maxLevel, skill.xp),
+    maxLevel: skill.maxLevel,
+  }));
   return {
     questsCompleted,
-    hasEvidenceCompletion,
+    projectsCompleted,
+    abilityDemonstrated,
     readingQuestsCompleted,
     goalsCompleted,
     longestChallengeCompleted,
     maxSkillLevel: levels.reduce((max, skill) => Math.max(max, skill.level), 0),
-    hasMasteredSkill: levels.some((skill) => skill.level >= skill.maxLevel),
+    // Mastery needs proof, never XP alone.
+    hasMasteredSkill: levels.some((skill) => skill.level >= skill.maxLevel && verified.has(skill.skillId)),
   };
 }
 
@@ -78,8 +95,9 @@ export async function checkAchievements(userId: string): Promise<UnlockedAchieve
         userId,
         amount: achievement.xpReward,
         sourceType: "ACHIEVEMENT",
-        // One award per achievement, ever — re-earning conditions can't double-pay.
-        sourceId: achievement.id,
+        // One award per user per achievement, ever. The ledger's source key is
+        // global, so it must carry the user — the achievement id alone is shared.
+        sourceId: `${userId}:${achievement.id}`,
         lifeArea: null,
         reason: `Achievement: ${achievement.name}`,
       });

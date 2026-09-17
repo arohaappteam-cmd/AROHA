@@ -1,7 +1,10 @@
 import {
+  ClipboardCheckIcon,
   CompassIcon,
+  FolderKanbanIcon,
   GitBranchIcon,
   HouseIcon,
+  IdCardIcon,
   MapIcon,
   MessageCircleIcon,
   RouteIcon,
@@ -46,6 +49,27 @@ export const primaryNav: readonly NavItem[] = [
     href: "/skills",
     icon: GitBranchIcon,
     description: "Skill trees, unlocks and mastery",
+    available: true,
+  },
+  {
+    label: "Projects",
+    href: "/projects",
+    icon: FolderKanbanIcon,
+    description: "Real things you make, with evidence",
+    available: true,
+  },
+  {
+    label: "Assessments",
+    href: "/assessments",
+    icon: ClipboardCheckIcon,
+    description: "Quizzes, practical tasks and project reviews",
+    available: true,
+  },
+  {
+    label: "Passport",
+    href: "/passport",
+    icon: IdCardIcon,
+    description: "Your living record of proven capability",
     available: true,
   },
   {

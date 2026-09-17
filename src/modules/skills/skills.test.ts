@@ -137,7 +137,7 @@ const xp = (entries: Record<string, number>) => new Map(Object.entries(entries))
 
 describe("skill tree state", () => {
   it("derives know → learning → next → locked", () => {
-    const nodes = buildSkillTree(ROWS, xp({ basics: 200, practice: 60 }));
+    const nodes = buildSkillTree(ROWS, xp({ basics: 200, practice: 60 }), new Set(["basics"]));
     const byId = new Map(flattenTree(nodes).map((node) => [node.id, node]));
     expect(byId.get("basics")!.status).toBe("MASTERED"); // 200 ≥ 30×6
     expect(byId.get("practice")!.status).toBe("IN_PROGRESS");
@@ -156,7 +156,7 @@ describe("skill tree state", () => {
     expect(frontierSkill(buildSkillTree(ROWS, new Map()))!.id).toBe("basics");
     expect(frontierSkill(buildSkillTree(ROWS, xp({ basics: 40, practice: 60 })))!.id).toBe("basics");
     const allMastered = xp({ basics: 1000, practice: 5000, "practice-child": 5000, advanced: 10000 });
-    expect(frontierSkill(buildSkillTree(ROWS, allMastered))).toBeNull();
+    expect(frontierSkill(buildSkillTree(ROWS, allMastered, new Set(ROWS.map((r) => r.id))))).toBeNull();
   });
 
   it("routes awards for locked skills up the requirement chain", () => {
@@ -170,9 +170,24 @@ describe("skill tree state", () => {
     expect(resolveAwardTarget(nodes)!.id).toBe("basics");
   });
 
+  it("never counts top-level XP as mastery without demonstrated ability", () => {
+    const unproven = flattenTree(buildSkillTree(ROWS, xp({ basics: 200 })));
+    const basics = unproven.find((node) => node.id === "basics")!;
+    expect(basics).toMatchObject({ status: "IN_PROGRESS", awaitingProof: true });
+    expect(basics.progress.mastered).toBe(true);
+    // Its unlocks still open — levels are real, mastery is what needs proof.
+    expect(unproven.find((node) => node.id === "practice")!.status).toBe("AVAILABLE");
+    // Practice can't grow it further, so awards move on.
+    expect(frontierSkill(buildSkillTree(ROWS, xp({ basics: 200 })))!.id).toBe("practice");
+    expect(resolveAwardTarget(buildSkillTree(ROWS, xp({ basics: 200 })), "t.basics")!.id).toBe("practice");
+
+    const proven = flattenTree(buildSkillTree(ROWS, xp({ basics: 200 }), new Set(["basics"])));
+    expect(proven.find((node) => node.id === "basics")).toMatchObject({ status: "MASTERED", awaitingProof: false });
+  });
+
   it("summarises a tree", () => {
-    const summary = summarizeTree(buildSkillTree(ROWS, xp({ basics: 200, practice: 60 })));
-    expect(summary).toEqual({ total: 4, mastered: 1, learning: 1, available: 1, locked: 1, xp: 260 });
+    const summary = summarizeTree(buildSkillTree(ROWS, xp({ basics: 200, practice: 60 }), new Set(["basics"])));
+    expect(summary).toEqual({ total: 4, mastered: 1, learning: 1, available: 1, locked: 1, awaitingProof: 0, xp: 260 });
   });
 
   it("reports skills newly unlocked by a level change", () => {

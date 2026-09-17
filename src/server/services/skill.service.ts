@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { LifeArea } from "@/generated/prisma/enums";
+import type { LifeArea, XpSourceType } from "@/generated/prisma/enums";
 import { isAwardableXp } from "@/modules/progression/awards";
 import { getSkillProgress, skillLevelLabel } from "@/modules/skills/levels";
 import { matchQuestToSkill } from "@/modules/skills/matching";
@@ -61,6 +61,8 @@ export type SkillTreeCard = {
   summary: SkillTreeSummary;
   /** Where the user currently is in this tree, if anywhere. */
   frontier: { slug: string; name: string; level: number; maxLevel: number; levelLabel: string; percent: number; started: boolean } | null;
+  /** Skills at top level still waiting for a demonstration to confirm mastery. */
+  awaitingProof: { slug: string; name: string }[];
   /** The nearest gated skill — what working this tree opens next. */
   nextUnlock: { name: string; requirement: SkillRequirement } | null;
 };
@@ -101,15 +103,16 @@ function toHistoryEntry(row: TransactionRow): SkillHistoryEntry {
 
 export async function getSkillsOverview(userId: string): Promise<SkillsOverview> {
   await ensureSkillCatalogue();
-  const [trees, xpBySkill, recent] = await Promise.all([
+  const [trees, xpBySkill, verified, recent] = await Promise.all([
     skillRepository.listTrees(),
     skillRepository.xpBySkill(userId),
+    skillRepository.abilityVerifiedSkillIds(userId),
     skillRepository.listRecentTransactions(userId, 8),
   ]);
 
   const totals = { known: 0, learning: 0, availableNext: 0, mastered: 0, totalXp: 0 };
   const cards = trees.map((tree): SkillTreeCard => {
-    const nodes = buildSkillTree(tree.skills, xpBySkill);
+    const nodes = buildSkillTree(tree.skills, xpBySkill, verified);
     const flat = flattenTree(nodes);
     const summary = summarizeTree(nodes);
     totals.known += flat.filter((node) => node.progress.level >= 1).length;
@@ -139,6 +142,7 @@ export async function getSkillsOverview(userId: string): Promise<SkillsOverview>
           }
         : null,
       nextUnlock: nextLocked ? { name: nextLocked.name, requirement: nextLocked.requirement! } : null,
+      awaitingProof: flat.filter((node) => node.awaitingProof).map((node) => ({ slug: node.slug, name: node.name })),
     };
   });
 
@@ -150,11 +154,12 @@ export async function getSkillTreeDetail(userId: string, treeSlug: string): Prom
   const tree = await skillRepository.findTree(treeSlug);
   if (!tree) return null;
 
-  const [xpBySkill, history] = await Promise.all([
+  const [xpBySkill, verified, history] = await Promise.all([
     skillRepository.xpBySkill(userId),
+    skillRepository.abilityVerifiedSkillIds(userId),
     skillRepository.listRecentTransactions(userId, 12, tree.id),
   ]);
-  const nodes = buildSkillTree(tree.skills, xpBySkill);
+  const nodes = buildSkillTree(tree.skills, xpBySkill, verified);
 
   return {
     tree: { slug: tree.slug, name: tree.name, emoji: tree.emoji, description: tree.description, lifeArea: tree.lifeArea },
@@ -198,8 +203,11 @@ export async function questCompleted(event: SkillQuestEvent): Promise<SkillAward
   const tree = await skillRepository.findTree(match.treeSlug);
   if (!tree) return null;
 
-  const xpBySkill = await skillRepository.xpBySkill(event.userId);
-  const nodes = buildSkillTree(tree.skills, xpBySkill);
+  const [xpBySkill, verified] = await Promise.all([
+    skillRepository.xpBySkill(event.userId),
+    skillRepository.abilityVerifiedSkillIds(event.userId),
+  ]);
+  const nodes = buildSkillTree(tree.skills, xpBySkill, verified);
   const target = resolveAwardTarget(nodes, match.skillSlug);
   if (!target) return null; // The whole tree is mastered.
 
@@ -231,6 +239,64 @@ export async function questCompleted(event: SkillQuestEvent): Promise<SkillAward
     levelLabel: skillLevelLabel(progress.level, target.maxLevel),
     unlocked: unlocked.map((node) => ({ slug: node.slug, name: node.name })),
   };
+}
+
+// ─── Direct awards (projects, assessments) ──────────────────────────────────
+
+export type DirectSkillAward = { skillId: string; amount: number };
+
+export type DirectSkillOutcome = {
+  skillId: string;
+  slug: string;
+  name: string;
+  xpAwarded: number;
+  level: number;
+  previousLevel: number;
+  leveledUp: boolean;
+};
+
+/**
+ * Pays demonstrated work straight into the named skills — even ones not yet
+ * unlocked: proof can open a skill early, practice can't. Idempotent per
+ * source. Returns an outcome per skill (xpAwarded 0 when nothing was paid).
+ */
+export async function awardSkills(
+  userId: string,
+  source: { sourceType: XpSourceType; sourceId: string; reason: string },
+  awards: DirectSkillAward[],
+): Promise<DirectSkillOutcome[]> {
+  const valid = awards.filter((award) => isAwardableXp(award.amount));
+  if (valid.length === 0) return [];
+  await ensureSkillCatalogue();
+
+  const [skills, before] = await Promise.all([
+    skillRepository.findSkills(valid.map((award) => award.skillId)),
+    skillRepository.xpBySkill(userId),
+  ]);
+  const byId = new Map(skills.map((skill) => [skill.id, skill]));
+  const entries = valid.filter((award) => byId.has(award.skillId));
+  const paid = await skillRepository.awardMany(userId, source, entries);
+
+  return entries.map((entry) => {
+    const skill = byId.get(entry.skillId)!;
+    const previousXp = before.get(skill.id) ?? 0;
+    const previousLevel = getSkillProgress(skill.baseXp, skill.maxLevel, previousXp).level;
+    const level = getSkillProgress(skill.baseXp, skill.maxLevel, previousXp + (paid ? entry.amount : 0)).level;
+    return {
+      skillId: skill.id,
+      slug: skill.slug,
+      name: skill.name,
+      xpAwarded: paid ? entry.amount : 0,
+      level,
+      previousLevel,
+      leveledUp: level > previousLevel,
+    };
+  });
+}
+
+/** Removes skill XP a source paid (e.g. a reopened project). */
+export async function revokeSkillAwards(userId: string, sourceType: XpSourceType, sourceId: string): Promise<void> {
+  await skillRepository.revoke(userId, sourceType, sourceId);
 }
 
 /** Undoes whatever skill progress a quest completion produced. */

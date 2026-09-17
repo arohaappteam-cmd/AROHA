@@ -46,6 +46,70 @@ export const skillRepository = {
     return new Map(rows.map((row) => [row.skillId, row._sum.amount ?? 0]));
   },
 
+  /** Skills where ability was demonstrated: a passed practical or project assessment. */
+  async abilityVerifiedSkillIds(userId: string): Promise<Set<string>> {
+    const rows = await db.assessmentAttempt.findMany({
+      where: { userId, outcome: "PASSED", kind: { in: ["PRACTICAL", "PROJECT"] } },
+      distinct: ["skillId"],
+      select: { skillId: true },
+    });
+    return new Set(rows.map((row) => row.skillId));
+  },
+
+  findSkills(ids: string[]) {
+    return db.skill.findMany({
+      where: { id: { in: ids } },
+      include: { tree: { select: { slug: true, name: true, emoji: true, lifeArea: true } } },
+    });
+  },
+
+  findSkillBySlug(slug: string) {
+    return db.skill.findUnique({
+      where: { slug },
+      include: { tree: { select: { slug: true, name: true, emoji: true, lifeArea: true } } },
+    });
+  },
+
+  /** Every skill with its tree, for pickers. */
+  listAllSkills() {
+    return db.skill.findMany({
+      orderBy: [{ tree: { sortOrder: "asc" } }, { order: "asc" }, { slug: "asc" }],
+      select: { id: true, slug: true, name: true, parentId: true, tree: { select: { slug: true, name: true, emoji: true } } },
+    });
+  },
+
+  /**
+   * Awards XP to several specific skills for one source, in one transaction.
+   * False without writing when that source already paid anything.
+   */
+  async awardMany(
+    userId: string,
+    source: { sourceType: XpSourceType; sourceId: string; reason: string },
+    entries: { skillId: string; amount: number }[],
+  ): Promise<boolean> {
+    if (entries.length === 0) return false;
+    try {
+      return await db.$transaction(async (tx) => {
+        const existing = await tx.skillXpTransaction.findFirst({
+          where: { userId, sourceType: source.sourceType, sourceId: source.sourceId },
+          select: { id: true },
+        });
+        if (existing) return false;
+        await tx.skillXpTransaction.createMany({
+          data: entries.map((entry) => ({ userId, skillId: entry.skillId, amount: entry.amount, ...source })),
+        });
+        await tx.userSkill.createMany({
+          data: entries.map((entry) => ({ userId, skillId: entry.skillId })),
+          skipDuplicates: true,
+        });
+        return true;
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return false;
+      throw error;
+    }
+  },
+
   /** Newest skill progress entries — the skill progression history. */
   listRecentTransactions(userId: string, limit: number, treeId?: string) {
     return db.skillXpTransaction.findMany({

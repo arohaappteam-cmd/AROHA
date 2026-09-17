@@ -113,6 +113,8 @@ enum XpSourceType {
   MILESTONE_COMPLETION
   GOAL_COMPLETION
   CHALLENGE_COMPLETION
+  PROJECT_COMPLETION
+  ASSESSMENT_PASSED
   ACHIEVEMENT
   ADJUSTMENT
 }
@@ -176,6 +178,63 @@ enum LearningFormat {
   AI_LESSONS
 }
 
+/// Project lifecycle (spec §19). Completing requires evidence.
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+}
+
+/// What kind of thing a project makes. Meta (life area, suggested skill
+/// trees) lives in src/modules/projects/categories.ts.
+enum ProjectCategory {
+  SOFTWARE
+  WRITING
+  PHOTOGRAPHY
+  MUSIC
+  ART
+  PRODUCT
+  COOKING
+  FITNESS
+  LANGUAGE
+  COMMUNITY
+  OTHER
+}
+
+/// The shape of a piece of proof (spec §20).
+enum EvidenceKind {
+  LINK
+  REPOSITORY
+  DOCUMENT
+  MEDIA
+  NOTE
+}
+
+/// Assessment formats (spec §25).
+enum AssessmentKind {
+  QUIZ
+  PRACTICAL
+  PROJECT
+}
+
+/// Non-punitive outcomes: an attempt either passed or is "not yet".
+enum AssessmentOutcome {
+  PASSED
+  NOT_YET
+}
+
+/// Who judged an attempt — shown next to every result, so proof is honest
+/// about where it came from.
+enum AssessmentEvaluator {
+  /// Deterministic grading against the definition's answer key.
+  AUTO_GRADED
+  /// AI rubric scores; pass/fail still decided by backend rules.
+  AI
+  /// The user's own rubric ratings, accepted only with evidence attached.
+  SELF_REVIEW
+}
+
 // ─── Identity ───────────────────────────────────────────────────────────────
 
 model User {
@@ -207,6 +266,9 @@ model User {
   skillXp          SkillXpTransaction[]
   achievements     UserAchievement[]
   challenges       Challenge[]
+  projects         Project[]
+  evidence         Evidence[]
+  assessments      AssessmentAttempt[]
   reflections      Reflection[]
 }
 
@@ -570,6 +632,8 @@ model Skill {
   unlocks        Skill[]              @relation("SkillUnlock")
   userSkills     UserSkill[]
   xpTransactions SkillXpTransaction[]
+  projects       ProjectSkill[]
+  assessments    AssessmentAttempt[]
 
   @@index([treeId, order])
 }
@@ -609,6 +673,122 @@ model SkillXpTransaction {
   @@unique([skillId, sourceType, sourceId])
   @@index([userId, createdAt])
   @@index([userId, skillId])
+}
+
+// ─── Projects, evidence & assessments (spec §19–21, §25) ────────────────────
+
+/// A real thing the user is making. Projects are where claims become proof.
+model Project {
+  id          String          @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  category    ProjectCategory
+  status      ProjectStatus   @default(PLANNING)
+  /// What building it taught — shown on the Skill Passport.
+  reflection  String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  /// XP the completion paid, priced by the backend when completed.
+  xpAwarded   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills      ProjectSkill[]
+  milestones  ProjectMilestone[]
+  evidence    Evidence[]
+  assessments AssessmentAttempt[]
+
+  @@index([userId, status])
+}
+
+model ProjectSkill {
+  id        String @id @default(cuid())
+  projectId String
+  skillId   String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, skillId])
+  @@index([skillId])
+}
+
+model ProjectMilestone {
+  id          String    @id @default(cuid())
+  projectId   String
+  title       String
+  /// 0-based position within the project.
+  order       Int
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, order])
+}
+
+/// One piece of proof (spec §20): a link, repository, document, media or a
+/// written note. Belongs to a project or an assessment attempt; the skills it
+/// proves follow from its owner.
+model Evidence {
+  id        String       @id @default(cuid())
+  userId    String
+  projectId String?
+  attemptId String?
+  kind      EvidenceKind
+  title     String
+  url       String?
+  note      String?
+  createdAt DateTime     @default(now())
+
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project?           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  attempt AssessmentAttempt? @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([projectId])
+}
+
+/// One submitted, evaluated assessment. The definition is snapshotted, so
+/// catalogue changes (or AI-generated assessments later) never rewrite
+/// history. Evaluation happens on submit; pass/fail is always decided by
+/// backend rules, whoever produced the scores.
+model AssessmentAttempt {
+  id            String              @id @default(cuid())
+  userId        String
+  /// Catalogue key (src/modules/assessments/catalogue.ts) or "project.<skill>".
+  assessmentKey String
+  kind          AssessmentKind
+  skillId       String
+  title         String
+  /// The definition as it was when taken.
+  definition    Json
+  /// Quiz answers (option indices) or rubric self-ratings, by key.
+  answers       Json?
+  /// Written response: what was done and how.
+  response      String?
+  projectId     String?
+  score         Int
+  maxScore      Int
+  percent       Int
+  outcome       AssessmentOutcome
+  evaluator     AssessmentEvaluator
+  /// Per-question or per-criterion notes plus a summary and next step.
+  feedback      Json
+  /// XP paid by this attempt (only a first pass pays).
+  xpAwarded     Int                 @default(0)
+  createdAt     DateTime            @default(now())
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill    Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  project  Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  evidence Evidence[]
+
+  @@index([userId, createdAt])
+  @@index([userId, skillId])
+  @@index([userId, assessmentKey])
 }
 
 // ─── Achievements & streaks (spec §17–18) ───────────────────────────────────

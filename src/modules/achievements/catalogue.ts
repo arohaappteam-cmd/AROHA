@@ -8,8 +8,10 @@
 /** Everything achievement rules are allowed to look at. All backend-derived. */
 export type AchievementFacts = {
   questsCompleted: number;
-  /** A completed quest exists with an evidence link — proof of something made. */
-  hasEvidenceCompletion: boolean;
+  /** Completed projects — each one carries evidence by rule. */
+  projectsCompleted: number;
+  /** A practical task or project assessment has been passed. */
+  abilityDemonstrated: boolean;
   /** Completed real reading sessions. */
   readingQuestsCompleted: number;
   goalsCompleted: number;
@@ -17,13 +19,14 @@ export type AchievementFacts = {
   longestChallengeCompleted: number;
   /** Highest level reached across all skills. */
   maxSkillLevel: number;
-  /** A skill has reached its final level. */
+  /** A skill reached its final level AND ability was demonstrated in it. */
   hasMasteredSkill: boolean;
 };
 
 export const EMPTY_FACTS: AchievementFacts = {
   questsCompleted: 0,
-  hasEvidenceCompletion: false,
+  projectsCompleted: 0,
+  abilityDemonstrated: false,
   readingQuestsCompleted: 0,
   goalsCompleted: 0,
   longestChallengeCompleted: 0,
@@ -73,11 +76,29 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
   {
     slug: "first-project",
     name: "First Project",
-    description: "You finished work and shared a link to prove it. Made beats claimed.",
+    description: "You finished a real project and showed the evidence. Made beats claimed.",
     emoji: "🛠️",
-    hint: "Complete a quest and attach a link to what you made.",
+    hint: "Complete a project with evidence attached.",
     xpReward: 50,
-    earned: (facts) => facts.hasEvidenceCompletion,
+    earned: (facts) => facts.projectsCompleted >= 1,
+  },
+  {
+    slug: "builder",
+    name: "Builder",
+    description: "Three finished projects. Making things is part of who you are.",
+    emoji: "🏗️",
+    hint: "Complete 3 projects.",
+    xpReward: 100,
+    earned: (facts) => facts.projectsCompleted >= 3,
+  },
+  {
+    slug: "proof-over-claims",
+    name: "Proof Over Claims",
+    description: "You passed a practical task or project review — ability shown, not just said.",
+    emoji: "🔎",
+    hint: "Pass a practical task or project assessment.",
+    xpReward: 50,
+    earned: (facts) => facts.abilityDemonstrated,
   },
   {
     slug: "first-book",
@@ -127,9 +148,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
   {
     slug: "skill-mastery",
     name: "Skill Mastery",
-    description: "You took a skill all the way to its final level.",
+    description: "You took a skill to its final level and proved it in an assessed task.",
     emoji: "👑",
-    hint: "Master any skill completely.",
+    hint: "Reach a skill's top level and pass a practical or project assessment in it.",
     xpReward: 150,
     earned: (facts) => facts.hasMasteredSkill,
   },

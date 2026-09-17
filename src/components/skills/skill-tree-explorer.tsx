@@ -1,11 +1,13 @@
 "use client";
 
-import { ChevronDownIcon, CircleCheckIcon, CircleDotIcon, CircleIcon, LockIcon } from "lucide-react";
+import { ChevronDownIcon, CircleCheckIcon, CircleDotIcon, CircleIcon, ClipboardCheckIcon, LockIcon } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SKILL_STATUS_META } from "@/components/skills/skill-status";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { PROJECT_ASSESSMENT_PREFIX } from "@/modules/assessments/catalogue";
 import { skillLevelLabel } from "@/modules/skills/levels";
 import { flattenTree, type SkillNode, type SkillStatus } from "@/modules/skills/state";
 
@@ -54,8 +56,27 @@ function NodeDetail({ node, unlocks }: { node: SkillNode; unlocks: SkillNode[] }
           <LockIcon className="size-3.5 shrink-0" aria-hidden />
           Unlocks when <span className="font-medium text-foreground">{node.requirement.name}</span> reaches level {node.requirement.level}.
         </p>
-      ) : progress.mastered ? (
-        <p className={cn("font-medium", meta.text)}>Mastered — this is part of what you know.</p>
+      ) : node.status === "MASTERED" ? (
+        <p className={cn("font-medium", meta.text)}>Mastered — top level reached and ability demonstrated.</p>
+      ) : node.awaitingProof ? (
+        <div className="space-y-2">
+          <p className="font-medium">Top level reached through practice.</p>
+          <p className="text-muted-foreground">
+            Practice alone isn&apos;t mastery. Pass a practical task or have a finished project reviewed to confirm it.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/assessments" className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+              <ClipboardCheckIcon className="size-3.5" aria-hidden />
+              Find an assessment
+            </Link>
+            <Link
+              href={`/assessments/${PROJECT_ASSESSMENT_PREFIX}${node.slug}`}
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              Review a project for {node.name}
+            </Link>
+          </div>
+        </div>
       ) : (
         <div className="space-y-1.5">
           <div className="flex items-baseline justify-between gap-2">
@@ -128,7 +149,11 @@ function TreeBranch({
               <Icon className={cn("size-4 shrink-0", meta.text)} aria-hidden />
               <span className={cn("text-sm font-medium", locked && "text-muted-foreground")}>{node.name}</span>
               <span className={cn("rounded-full px-1.5 py-px text-[10px] font-medium tracking-wide uppercase", meta.badge)}>
-                {node.status === "IN_PROGRESS" ? skillLevelLabel(node.progress.level, node.maxLevel) : meta.label}
+                {node.awaitingProof
+                  ? "Ready to prove"
+                  : node.status === "IN_PROGRESS"
+                    ? skillLevelLabel(node.progress.level, node.maxLevel)
+                    : meta.label}
               </span>
               <span className="ml-auto flex items-center gap-2">
                 {node.progress.xp > 0 && (

@@ -5,6 +5,10 @@ import { getSkillProgress, skillLevelForXp, type SkillProgress } from "./levels"
  * mastered → what I know, in progress → what I'm learning,
  * available → what I can unlock next, locked → what's further ahead.
  *
+ * Mastery is never just XP (spec §20): a skill at its top level only counts
+ * as MASTERED once ability has been demonstrated in an assessed practical
+ * task or project. Until then it stays IN_PROGRESS with `awaitingProof`.
+ *
  * Pure and client-safe: rows and XP in, plain serialisable nodes out.
  */
 
@@ -28,14 +32,24 @@ export type SkillRequirement = { slug: string; name: string; level: number };
 
 export type SkillNode = SkillStateRow & {
   status: SkillStatus;
+  /** Top XP level reached, but mastery not yet demonstrated. */
+  awaitingProof: boolean;
   progress: SkillProgress;
   /** What must be levelled before this skill opens; null when none or already met. */
   requirement: SkillRequirement | null;
   children: SkillNode[];
 };
 
-/** Builds the nested, status-annotated tree from skill rows and per-skill XP. */
-export function buildSkillTree(rows: SkillStateRow[], xpBySkillId: ReadonlyMap<string, number>): SkillNode[] {
+/**
+ * Builds the nested, status-annotated tree from skill rows and per-skill XP.
+ * `abilityVerified` holds ids of skills with a passed practical or project
+ * assessment — the only way a skill becomes MASTERED.
+ */
+export function buildSkillTree(
+  rows: SkillStateRow[],
+  xpBySkillId: ReadonlyMap<string, number>,
+  abilityVerified: ReadonlySet<string> = new Set(),
+): SkillNode[] {
   const byId = new Map(rows.map((row) => [row.id, row]));
   const levelOf = (row: SkillStateRow) => skillLevelForXp(row.baseXp, row.maxLevel, xpBySkillId.get(row.id) ?? 0);
 
@@ -45,8 +59,9 @@ export function buildSkillTree(rows: SkillStateRow[], xpBySkillId: ReadonlyMap<s
     const requires = row.requiresId ? byId.get(row.requiresId) : undefined;
     const met = !requires || levelOf(requires) >= row.unlockLevel;
 
+    const awaitingProof = progress.mastered && !abilityVerified.has(row.id);
     let status: SkillStatus;
-    if (progress.mastered) status = "MASTERED";
+    if (progress.mastered && !awaitingProof) status = "MASTERED";
     else if (xp > 0) status = "IN_PROGRESS";
     else if (met) status = "AVAILABLE";
     else status = "LOCKED";
@@ -54,6 +69,7 @@ export function buildSkillTree(rows: SkillStateRow[], xpBySkillId: ReadonlyMap<s
     return {
       ...row,
       status,
+      awaitingProof,
       progress,
       requirement: requires && !met ? { slug: requires.slug, name: requires.name, level: row.unlockLevel } : null,
       children: [],
@@ -80,13 +96,22 @@ export function flattenTree(nodes: SkillNode[]): SkillNode[] {
   return nodes.flatMap((node) => [node, ...flattenTree(node.children)]);
 }
 
+/** A skill that practice XP can still move: open, and below its top level. */
+function canGrow(node: SkillNode): boolean {
+  return node.status === "AVAILABLE" || (node.status === "IN_PROGRESS" && !node.awaitingProof);
+}
+
 /**
  * Where progress in this tree currently lands: the skill being learned, or
- * the first one ready to start. Null once everything is mastered.
+ * the first one ready to start. Null once nothing can grow through practice.
  */
 export function frontierSkill(nodes: SkillNode[]): SkillNode | null {
   const flat = flattenTree(nodes);
-  return flat.find((node) => node.status === "IN_PROGRESS") ?? flat.find((node) => node.status === "AVAILABLE") ?? null;
+  return (
+    flat.find((node) => node.status === "IN_PROGRESS" && !node.awaitingProof) ??
+    flat.find((node) => node.status === "AVAILABLE") ??
+    null
+  );
 }
 
 /**
@@ -105,7 +130,7 @@ export function resolveAwardTarget(nodes: SkillNode[], preferredSlug?: string | 
     seen.add(candidate.id);
     candidate = candidate.requiresId ? (flat.find((node) => node.id === candidate!.requiresId) ?? null) : null;
   }
-  if (candidate && (candidate.status === "AVAILABLE" || candidate.status === "IN_PROGRESS")) return candidate;
+  if (candidate && canGrow(candidate)) return candidate;
   return frontierSkill(nodes);
 }
 
@@ -115,6 +140,8 @@ export type SkillTreeSummary = {
   learning: number;
   available: number;
   locked: number;
+  /** At top level, waiting for a demonstration to confirm mastery. */
+  awaitingProof: number;
   xp: number;
 };
 
@@ -126,6 +153,7 @@ export function summarizeTree(nodes: SkillNode[]): SkillTreeSummary {
     learning: flat.filter((n) => n.status === "IN_PROGRESS").length,
     available: flat.filter((n) => n.status === "AVAILABLE").length,
     locked: flat.filter((n) => n.status === "LOCKED").length,
+    awaitingProof: flat.filter((n) => n.awaitingProof).length,
     xp: flat.reduce((sum, n) => sum + n.progress.xp, 0),
   };
 }

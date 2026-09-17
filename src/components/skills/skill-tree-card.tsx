@@ -46,6 +46,11 @@ export function SkillTreeCard({ tree }: { tree: SkillTreeCardData }) {
                 </ProgressTrack>
               </Progress>
             </div>
+          ) : tree.awaitingProof.length > 0 ? (
+            <p className="text-sm">
+              <span className="font-medium">Ready to prove:</span>{" "}
+              <span className="text-muted-foreground">{tree.awaitingProof.map((skill) => skill.name).join(", ")}</span>
+            </p>
           ) : (
             <p className={cn("flex items-center gap-1.5 text-sm font-medium", style.text)}>
               <SparklesIcon className="size-4" aria-hidden />
