@@ -3,7 +3,7 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: Phase 9 — journal, reflection, life timeline and experiments.**
+**Current state: Phase 11 — the community layer (a demonstration, not a network).**
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -17,7 +17,9 @@ lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specific
 | 7 | Motivation: achievements, streaks, challenges, Shadow Debt | Done |
 | 8 | Projects with evidence, assessments (quiz / practical / project review, AI-assisted), proof of skill, Skill Passport | Done |
 | 9 | Private journal, end-of-day reflection with AI summary, life timeline, Experiment Mode | Done |
-| — | Weekly review, social layer | Not started |
+| 10 | Personal analytics: trends, life-area balance, goal momentum, skill progression, patterns with evidence, AI insights & recommendations | Done |
+| 11 | Community (demo): social profiles, discovery, guilds, group challenges, opt-in leaderboards, mentorship — seeded people behind a swappable directory | Done |
+| — | Weekly review, real multi-user accounts | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
@@ -27,7 +29,10 @@ Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/assessments/[assessmentKey]`, `/assessments/attempts/[attemptId]`, `/passport`,
 `/journal`, `/journal/reflect` (`?date=`), `/journal/new`, `/journal/[entryId]`,
 `/journal/[entryId]/edit`, `/journey/timeline` (`?kind=`), `/discover`,
-`/discover/[experimentId]`,
+`/discover/[experimentId]`, `/insights` (`?range=4w|12w|26w`),
+`/community`, `/community/guilds`, `/community/guilds/[slug]`,
+`/community/challenges`, `/community/leaderboards` (`?board=&guild=`),
+`/community/mentorship`, `/community/people/[handle]`, `/community/profile`,
 `/mentor`, `/api/health`.
 
 ## AI Mentor
@@ -102,6 +107,10 @@ src/
     reflection/           reflection form and summary, journal forms, Home card
     experiments/          experiment cards, templates, custom form, review
     journey/              Journey tabs (challenges & achievements / timeline)
+    insights/             Insights page: CSS column charts, life-area balance,
+                          goal momentum, skill gains, insight report
+    social/               community chrome, person & guild cards, group
+                          challenge cards, leaderboards, mentorship, sharing
     character/            character avatar + dashboard cards
       edit/               client editors for the customize page
   config/                 env validation (server), site constants, navigation
@@ -130,7 +139,12 @@ src/
                           review questions and XP
     timeline/             timeline events, skill/level milestones replayed
                           from the ledgers, year/month grouping
-    analytics/            aggregations over progression data
+    analytics/            personal analytics: dataset & windows, overview
+                          (trends, balance, goal momentum, skill gains),
+                          pattern detection, AI insight contract + grounding
+    social/               community demo: seeded people, guilds & group
+                          challenges, the SocialDirectory port, shared-ground
+                          matching, leaderboards, mentorship chains
   server/                 server-only code
     db/                   Prisma client (singleton + factory), catalogue sync
     progression/          XP engine + the port quests report completions to
@@ -275,3 +289,50 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
   challenges, experiments, experiences, skill milestones (started, level 3, top
   level, demonstrated) and character tiers are read from existing records and
   replayed ledgers, grouped by year and month in the user's timezone.
+- **Analytics are counts, not scores.** The Insights page charts the user's own
+  records — quests completed per week and per life area, XP, skill levels
+  replayed from the skill ledger, goal momentum (moving = progress in 2+ of the
+  last 4 weeks), challenges. Nothing is a health, ability or "life score", and
+  balance is described as a picture of the days, not a target.
+- **Patterns carry their evidence.** Rules in `modules/analytics/patterns.ts`
+  look for shifts worth knowing (an area dipping while the rest holds, hard
+  quests done in the morning, several goals but few moving, skill practice up
+  after a project started) and each pattern states the numbers it rests on.
+  Changes need a minimum volume, "from zero" isn't a trend, and nothing claims
+  a cause. Fewer than 5 completions in 12 weeks → no patterns at all.
+- **AI explains, never adds.** With AI on, the model rewrites the patterns into
+  insights and recommendations but must cite pattern keys; items citing unknown
+  keys are dropped, the evidence shown is always the backend's, and links are
+  limited to an in-app allowlist. If nothing grounded survives, the rule-based
+  report is shown. The model input never includes the journal or raw notes and
+  doesn't depend on the charted range, so results are cached in memory per
+  user until the patterns change. The report streams in behind the charts.
+- **The community layer is a demonstration, and says so.** There is no second
+  account, no messaging and no feed. Every other person comes from
+  `SocialDirectory` (`modules/social/directory.ts`), whose only implementation
+  today serves seeded sample people; each page states plainly that they are
+  sample data. Making it real means adding a live directory — no page, service
+  or table above that port changes.
+- **The user's side of the community is real.** `SocialProfile`,
+  `GuildMembership`, `GroupChallengeEntry` and `Mentorship` hold only this
+  user's own choices. Joining a group challenge starts an ordinary personal
+  challenge from the usual template, so its days are earned by real quests and
+  the two-at-a-time limit still applies; leaving the group leaves the
+  challenge running.
+- **Nothing is shared until the user shares it.** A social profile is PRIVATE
+  by default, with per-part toggles (level, skills, achievements), and the
+  journal and reflections are never shareable at all. Leaderboards are opt-in
+  and list nobody who hasn't asked to be listed.
+- **You vs. your previous self comes first.** Every community page leads with
+  the user's last 28 days against their own 28 before — the same measure shown
+  for other people. Leaderboards are opened deliberately (no board renders
+  until one is chosen), ties share a rank, the "own improvement" board needs a
+  real baseline before it will rank anyone, and the viewer always sees their
+  own row.
+- **Discovery explains itself.** Suggested people and guilds carry the reasons
+  they were suggested — shared interests, shared guilds, matching focus areas
+  or a skill one of them could help with. Matching never uses anything private.
+- **Mentorship is a chain, not a ladder.** Expert → mentor → beginner, derived
+  from who mentors whom. The viewer's own standing comes from the skills they
+  built (level 3 to mentor, 7 for expert), and a near-peer ranks above a
+  distant expert on purpose.

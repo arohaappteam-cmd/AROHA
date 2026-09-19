@@ -1,5 +1,6 @@
-import { SparklesIcon } from "lucide-react";
+import { ChartLineIcon, SparklesIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { connection } from "next/server";
 
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/components/mentor/insight-cards";
 import { PageHeader } from "@/components/common/page-header";
 import { LessonView } from "@/components/quests/lesson-view";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getMentorPanel } from "@/server/services/mentor.service";
 
@@ -30,6 +32,12 @@ export default async function MentorPage() {
           panel.aiConfigured
             ? "Your mentor reads your goals, quests and reflections to guide what's next."
             : "Built-in guidance for now. Connect an AI model to make the mentor personal to you."
+        }
+        actions={
+          <Link href="/insights" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <ChartLineIcon data-icon="inline-start" />
+            Your trends
+          </Link>
         }
       />
 

@@ -1,4 +1,6 @@
 import {
+  ChartLineIcon,
+  UsersRoundIcon,
   ClipboardCheckIcon,
   CompassIcon,
   FolderKanbanIcon,
@@ -92,6 +94,20 @@ export const primaryNav: readonly NavItem[] = [
     href: "/discover",
     icon: CompassIcon,
     description: "Experiments: try something new for a while",
+    available: true,
+  },
+  {
+    label: "Community",
+    href: "/community",
+    icon: UsersRoundIcon,
+    description: "Guilds, group challenges and mentorship",
+    available: true,
+  },
+  {
+    label: "Insights",
+    href: "/insights",
+    icon: ChartLineIcon,
+    description: "Trends, balance and patterns in your growth",
     available: true,
   },
   {

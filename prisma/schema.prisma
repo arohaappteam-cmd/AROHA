@@ -270,6 +270,25 @@ enum ExperimentDecision {
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
+/// How much of the user's record the community layer may show. Nothing is
+/// shared until the user chooses it (spec §44).
+enum SocialVisibility {
+  PRIVATE
+  COMMUNITY
+}
+
+/// The user's side of a mentorship: being mentored, or mentoring someone.
+enum MentorshipRole {
+  MENTEE
+  MENTOR
+}
+
+enum MentorshipStatus {
+  ACTIVE
+  ENDED
+}
+
+
 model User {
   id             String    @id @default(cuid())
   /// Stable handle. The single local user is resolved by handle.
@@ -305,6 +324,10 @@ model User {
   reflections      Reflection[]
   journalEntries   JournalEntry[]
   experiments      Experiment[]
+  socialProfile    SocialProfile?
+  guilds           GuildMembership[]
+  groupChallenges  GroupChallengeEntry[]
+  mentorships      Mentorship[]
 }
 
 /// The user's living AROHA character (spec §7, §30). Holds game-facing
@@ -886,8 +909,9 @@ model Challenge {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  user User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  days ChallengeDay[]
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days         ChallengeDay[]
+  groupEntries GroupChallengeEntry[]
 
   @@index([userId, status])
 }
@@ -1018,4 +1042,79 @@ model ExperimentDay {
 
   @@unique([experimentId, date])
   @@index([userId, questId])
+}
+
+// ─── Community (demonstration layer, spec §44–46) ───────────────────────────
+// The people, guilds and group challenges the user meets are seeded data in
+// src/modules/social — there are no other real accounts yet. These tables
+// hold only *this* user's own choices, so real multi-user support can replace
+// the seeded directory without reshaping what the user did.
+
+/// What the user chooses to share with the community. Private by default.
+model SocialProfile {
+  id               String           @id @default(cuid())
+  userId           String           @unique
+  visibility       SocialVisibility @default(PRIVATE)
+  /// One line in the user's own words, shown on their community profile.
+  headline         String?
+  showLevel        Boolean          @default(true)
+  showSkills       Boolean          @default(true)
+  showAchievements Boolean          @default(true)
+  /// Opt-in: a leaderboard never lists someone who didn't ask to be listed.
+  onLeaderboards   Boolean          @default(false)
+  openToMentoring  Boolean          @default(false)
+  seekingMentor    Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// A guild the user has joined. `guildSlug` names a guild in the catalogue.
+model GuildMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  guildSlug String
+  joinedAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildSlug])
+}
+
+/// The user taking part in a group challenge. Their progress is their own
+/// Challenge, earned through real quests like any other — the group only
+/// provides company.
+model GroupChallengeEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  groupKey    String
+  challengeId String?
+  joinedAt    DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge? @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, groupKey])
+}
+
+/// A mentorship between the user and a community member. `counterpartHandle`
+/// names a seeded person today; with real accounts it becomes a userId.
+model Mentorship {
+  id                String           @id @default(cuid())
+  userId            String
+  role              MentorshipRole
+  counterpartHandle String
+  /// What the mentorship is about, e.g. "Programming" or a goal title.
+  topic             String
+  /// The note the user sent when they asked, or offered.
+  message           String?
+  status            MentorshipStatus @default(ACTIVE)
+  startedAt         DateTime         @default(now())
+  endedAt           DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role, counterpartHandle])
+  @@index([userId, status])
 }
