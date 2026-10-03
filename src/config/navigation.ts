@@ -115,6 +115,7 @@ export const primaryNav: readonly NavItem[] = [
     href: "/mentor",
     icon: MessageCircleIcon,
     description: "Conversation, insights and recommendations",
-    available: true,
+    // The AI Mentor is coming soon; shown with a "Soon" badge, not linked.
+    available: false,
   },
 ];

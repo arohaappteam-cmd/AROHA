@@ -67,12 +67,6 @@ export function rankPeople(viewer: ViewerContext, people: readonly SocialPerson[
       reasons.push(`Also focused on ${listOf(areas.map((area) => LIFE_AREAS[area].label.toLowerCase()))}`);
     }
 
-    const goalAreas = person.goals.map((goal) => goal.lifeArea).filter((area) => viewer.goalAreas.includes(area));
-    if (goalAreas.length > 0) {
-      score += goalAreas.length;
-      reasons.push(`Working toward a ${LIFE_AREAS[goalAreas[0]].label.toLowerCase()} goal too`);
-    }
-
     const canHelp = person.mentorsIn.filter((tree) => viewer.skillTrees.includes(tree));
     if (canHelp.length > 0 && person.openToMentoring) {
       score += 2;

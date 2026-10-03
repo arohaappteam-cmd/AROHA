@@ -2,66 +2,67 @@ import type { AvatarStyle, LifeArea } from "@/generated/prisma/enums";
 import type { AvatarColor, AvatarEmblem } from "@/modules/identity/avatar";
 
 /**
- * The community layer (spec §44–46) is a demonstration: the people, guilds
- * and group challenges below are seeded sample data, not real accounts. They
- * exist so the shape of the social experience can be designed and felt before
- * real multi-user support exists.
+ * The community layer (spec §44–46): real members who chose to be visible.
  *
  * Everything the app reads about other people goes through `SocialDirectory`
- * (directory.ts). Swapping the seeded implementation for one backed by real
- * users is the whole job of making this real — no page or service knows where
- * a person came from.
+ * (directory.ts), and only members whose profile is set to COMMUNITY are ever
+ * returned. Each part of a person's record is present only when they chose to
+ * share it — a `null` here means "they keep this private", never "zero".
  */
 
 export type SocialAvatar = { style: AvatarStyle; color: AvatarColor; emblem: AvatarEmblem };
 
-/** How far along a member is in a skill, as their own passport would show it. */
+/** How far along a member is in one skill tree: their strongest skill in it. */
 export type PersonSkill = {
   treeSlug: string;
   label: string;
   level: number;
   maxLevel: number;
-  /** Mirrors the proof tiers in modules/proof. */
-  proof: "practiced" | "tested" | "demonstrated" | "mastered";
 };
 
 export type MentorTier = "beginner" | "mentor" | "expert";
 
-export type SocialPerson = {
-  /** Stable id used in URLs. Seeded people are prefixed "demo-" nowhere: the handle is the id. */
-  handle: string;
-  displayName: string;
-  pronouns: string | null;
-  /** City-level only — the demo never invents precise locations. */
-  location: string;
-  avatar: SocialAvatar;
-  headline: string;
-  /** A couple of sentences in their own voice. */
-  about: string;
-  joinedDaysAgo: number;
+/** Level and recent activity, shared with "Level and XP". */
+export type PersonProgress = {
   totalXp: number;
-  /** XP in the last 28 days and the 28 before it — the same windows the user sees. */
+  /** XP in the last 28 days and the 28 before it — the same windows the viewer sees. */
   xpRecent: number;
   xpPrevious: number;
   questsRecent: number;
-  achievements: number;
-  challengesCompleted: number;
-  /** Goals they're working on, for shared-ground and mentorship matching. */
-  goals: { title: string; lifeArea: LifeArea; percent: number }[];
+};
+
+/** Shared with "Achievements". */
+export type PersonRecord = { achievements: number; challengesCompleted: number };
+
+export type SocialPerson = {
+  /** Public, stable id used in URLs. */
+  handle: string;
+  displayName: string;
+  pronouns: string | null;
+  avatar: SocialAvatar;
+  /** One line in their own words, or "" when they haven't written one. */
+  headline: string;
+  /** Their bio, or "". */
+  about: string;
+  /** Their character motto, or "". */
+  note: string;
+  joinedDaysAgo: number;
+  progress: PersonProgress | null;
+  record: PersonRecord | null;
   interests: string[];
   focusAreas: LifeArea[];
+  /** Empty when they don't share skills. */
   skills: PersonSkill[];
   guilds: string[];
+  /** Read from skills they've built, whether or not they share the details. */
   tier: MentorTier;
-  /** Skill trees they can mentor in. Empty for beginners. */
+  /** Skill trees they can mentor in. Empty unless they're open to mentoring. */
   mentorsIn: string[];
   openToMentoring: boolean;
   seekingMentorIn: string[];
-  /** Handles they are mentored by / mentoring, forming the expert → mentor → beginner chain. */
+  /** Handles of members in an active mentorship with them, both directions. */
   mentoredBy: string[];
   mentoring: string[];
-  /** What they'd tell someone starting out — shown on their profile, not a feed post. */
-  note: string;
 };
 
 export type Guild = {
@@ -79,8 +80,12 @@ export type Guild = {
   ritual: { title: string; detail: string };
   /** How the guild expects people to treat each other. */
   norms: string[];
+  /** Everyone who joined, visible or not. A count names nobody. */
   memberCount: number;
 };
+
+/** The curated part of a guild; the member count is read live. */
+export type GuildDefinition = Omit<Guild, "memberCount">;
 
 export type GroupChallenge = {
   key: string;
@@ -90,10 +95,9 @@ export type GroupChallenge = {
   description: string;
   /** The personal challenge template joining this starts (modules/challenges). */
   templateKey: string;
-  /** Days since the group's window opened, so the demo always looks live. */
-  startedDaysAgo: number;
   durationDays: number;
   targetDays: number;
-  /** Seeded members taking part, with the days they've earned. */
-  participants: { handle: string; daysDone: number }[];
 };
+
+/** Someone taking part in a group challenge, with the days they've earned. */
+export type GroupParticipant = { person: SocialPerson; daysDone: number };

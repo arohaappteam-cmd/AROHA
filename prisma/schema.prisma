@@ -284,15 +284,23 @@ enum MentorshipRole {
 }
 
 enum MentorshipStatus {
+  /// Asked for or offered, waiting on the other member.
+  PENDING
   ACTIVE
+  /// The other member said no.
+  DECLINED
   ENDED
 }
 
-
 model User {
   id             String    @id @default(cuid())
-  /// Stable handle. The single local user is resolved by handle.
+  /// Stable public handle, used in community URLs. The local development
+  /// user is resolved by handle; signed-in users get one generated at sign-up.
   handle         String    @unique
+  /// Supabase Auth user id (auth.users.id). Null for the local development user.
+  authId         String?   @unique
+  /// Sign-in email, copied from Supabase Auth. Never shown to other members.
+  email          String?
   displayName    String
   pronouns       String?
   bio            String?
@@ -327,7 +335,11 @@ model User {
   socialProfile    SocialProfile?
   guilds           GuildMembership[]
   groupChallenges  GroupChallengeEntry[]
-  mentorships      Mentorship[]
+  /// Mentorships this user asked for or offered.
+  mentorships      Mentorship[]          @relation("MentorshipRequester")
+  /// Mentorships other members asked this user for, or offered them.
+  mentorshipsWith  Mentorship[]          @relation("MentorshipCounterpart")
+  mentorshipNotes  MentorshipMessage[]
 }
 
 /// The user's living AROHA character (spec §7, §30). Holds game-facing
@@ -971,15 +983,15 @@ model Reflection {
 /// A private journal entry. Visible only to its owner: never shown on the
 /// passport or timeline, and never sent to AI.
 model JournalEntry {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   /// Calendar date the entry belongs to (user's timezone).
-  date      DateTime  @db.Date
+  date      DateTime @db.Date
   title     String?
   body      String
   mood      DayMood?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1068,6 +1080,8 @@ model SocialProfile {
   updatedAt        DateTime         @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([visibility])
 }
 
 /// A guild the user has joined. `guildSlug` names a guild in the catalogue.
@@ -1080,6 +1094,7 @@ model GuildMembership {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, guildSlug])
+  @@index([guildSlug])
 }
 
 /// The user taking part in a group challenge. Their progress is their own
@@ -1096,14 +1111,20 @@ model GroupChallengeEntry {
   challenge Challenge? @relation(fields: [challengeId], references: [id], onDelete: SetNull)
 
   @@unique([userId, groupKey])
+  @@index([groupKey])
 }
 
 /// A mentorship between the user and a community member. `counterpartHandle`
 /// names a seeded person today; with real accounts it becomes a userId.
+/// A mentorship between two members. `userId` is the member who asked or
+/// offered; `role` is *their* side of it. The counterpart accepts or declines.
 model Mentorship {
   id                String           @id @default(cuid())
   userId            String
   role              MentorshipRole
+  /// The other member. Null only on rows recorded before real accounts.
+  counterpartId     String?
+  /// Counterpart's handle when the row was written, kept for old rows.
   counterpartHandle String
   /// What the mentorship is about, e.g. "Programming" or a goal title.
   topic             String
@@ -1111,10 +1132,30 @@ model Mentorship {
   message           String?
   status            MentorshipStatus @default(ACTIVE)
   startedAt         DateTime         @default(now())
+  /// When the counterpart accepted or declined.
+  respondedAt       DateTime?
   endedAt           DateTime?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                @relation("MentorshipRequester", fields: [userId], references: [id], onDelete: Cascade)
+  counterpart User?               @relation("MentorshipCounterpart", fields: [counterpartId], references: [id], onDelete: Cascade)
+  messages    MentorshipMessage[]
 
   @@unique([userId, role, counterpartHandle])
   @@index([userId, status])
+  @@index([counterpartId, status])
+}
+
+/// A note between the two people in an active mentorship. Not a chat feed:
+/// short, deliberate messages, visible only to those two members.
+model MentorshipMessage {
+  id           String   @id @default(cuid())
+  mentorshipId String
+  authorId     String
+  body         String
+  createdAt    DateTime @default(now())
+
+  mentorship Mentorship @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([mentorshipId, createdAt])
 }

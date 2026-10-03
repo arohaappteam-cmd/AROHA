@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs } from "@/components/social/community-chrome";
 import { GuildCard } from "@/components/social/guild-cards";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getGuilds } from "@/server/services/social.service";
@@ -23,7 +23,6 @@ export default async function GuildsPage() {
         description="A guild is a small group around one kind of practice, with a weekly ritual and a few plain rules about how people treat each other."
       />
       <CommunityTabs active="/community/guilds" />
-      <DemoNotice kind="seeded" />
 
       {guilds.joined.length > 0 && (
         <section aria-labelledby="joined-title" className="space-y-3">

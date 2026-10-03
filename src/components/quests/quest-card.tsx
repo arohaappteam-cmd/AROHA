@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { LevelUpCelebration, useLevelUp } from "@/components/progression/level-up-celebration";
+import { QuestResult, useQuestResult } from "@/components/quests/quest-result";
 import { Button } from "@/components/ui/button";
 import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ export function QuestCard({ quest, xpAwarded, compact = false }: { quest: QuestV
   const [error, setError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const { levelUp, clearLevelUp, noticeProgression } = useLevelUp();
+  const { questResult, showQuestResult, clearQuestResult } = useQuestResult();
   const can = (action: QuestView["actions"][number]) => quest.actions.includes(action);
 
   const run = (action: () => Promise<ActionResult>, after?: () => void) => {
@@ -60,7 +62,11 @@ export function QuestCard({ quest, xpAwarded, compact = false }: { quest: QuestV
     setError(null);
     startTransition(async () => {
       const result = await completeQuestAction({ questId: quest.id });
-      if (result.ok) noticeProgression(result.data.progression);
+      if (result.ok) {
+        noticeProgression(result.data.progression);
+        // A level-up gets its own celebration; otherwise show the result.
+        if (!result.data.progression.leveledUp) showQuestResult({ title: quest.title, payload: result.data });
+      }
       else setError(result.error);
     });
   };
@@ -80,7 +86,7 @@ export function QuestCard({ quest, xpAwarded, compact = false }: { quest: QuestV
         set && "opacity-70",
       )}
     >
-      <div aria-hidden className={cn("pointer-events-none absolute inset-0", done ? "bg-[radial-gradient(ellipse_at_top_left,oklch(0.72_0.15_160/0.16),transparent_60%)]" : style.glow)} />
+      <div aria-hidden className={cn("pointer-events-none absolute inset-0", done ? "bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklch,var(--success)_16%,transparent),transparent_60%)]" : style.glow)} />
 
       <div className={cn("relative flex flex-col gap-4", compact ? "p-4" : "p-5")}>
         <header className="flex items-start justify-between gap-3">
@@ -227,6 +233,7 @@ export function QuestCard({ quest, xpAwarded, compact = false }: { quest: QuestV
       </div>
 
       {levelUp && <LevelUpCelebration outcome={levelUp} onClose={clearLevelUp} />}
+      {questResult && <QuestResult result={questResult} onClose={clearQuestResult} />}
     </article>
   );
 }

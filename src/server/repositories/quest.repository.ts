@@ -144,6 +144,11 @@ export const questRepository = {
     return db.dailyQuestSet.update({ where: { id: setId }, data });
   },
 
+  /** Area and status of every quest in one day's set — for the day's progress after a completion. */
+  setTally(setId: string) {
+    return db.quest.findMany({ where: { dailyQuestSetId: setId, status: { not: "DEFERRED" } }, select: { lifeArea: true, status: true } });
+  },
+
   /** Core quest outcomes for each day in [from, to]. */
   daySummaries(userId: string, from: Date, to: Date) {
     return db.dailyQuestSet.findMany({

@@ -8,6 +8,8 @@ export const handleSchema = z.string().trim().min(1).max(40);
 
 export const MAX_HEADLINE_LENGTH = 120;
 export const MAX_MENTORSHIP_MESSAGE = 400;
+/** One note inside an active mentorship. */
+export const MAX_MENTORSHIP_NOTE = 1000;
 
 export const socialProfileSchema = z.object({
   visibility: z.enum(["PRIVATE", "COMMUNITY"]),
@@ -28,3 +30,13 @@ export const mentorshipRequestSchema = z.object({
   message: z.string().trim().max(MAX_MENTORSHIP_MESSAGE).nullable().default(null),
 });
 export type MentorshipRequestInput = z.infer<typeof mentorshipRequestSchema>;
+
+export const mentorshipNoteSchema = z.object({
+  mentorshipId: z.string().min(1).max(60),
+  body: z.string().trim().min(1, "Write something first").max(MAX_MENTORSHIP_NOTE),
+});
+
+export const mentorshipResponseSchema = z.object({
+  mentorshipId: z.string().min(1).max(60),
+  accept: z.boolean(),
+});

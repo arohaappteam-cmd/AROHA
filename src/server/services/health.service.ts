@@ -1,27 +1,20 @@
 import "server-only";
 
-import { getEnv } from "@/config/env";
-import { getAIProvider } from "@/server/ai";
 import { db } from "@/server/db";
 
+/**
+ * What `/api/health` tells the world: whether the app can reach its database,
+ * and nothing else. The endpoint is public (Render's health check calls it),
+ * so failure details go to the server log, never into the response.
+ */
 export type HealthReport = {
   status: "ok" | "degraded";
-  database: { ok: boolean; latencyMs?: number; error?: string };
-  /** Which AI provider is active, or "fallback" when none is usable. */
-  ai: { provider: string };
-  environment: string;
+  database: { ok: boolean; latencyMs?: number };
 };
 
 export async function checkHealth(): Promise<HealthReport> {
-  const env = getEnv();
   const database = await checkDatabase();
-
-  return {
-    status: database.ok ? "ok" : "degraded",
-    database,
-    ai: { provider: getAIProvider()?.name ?? "fallback" },
-    environment: env.NODE_ENV,
-  };
+  return { status: database.ok ? "ok" : "degraded", database };
 }
 
 async function checkDatabase(): Promise<HealthReport["database"]> {
@@ -30,9 +23,7 @@ async function checkDatabase(): Promise<HealthReport["database"]> {
     await db.$queryRaw`SELECT 1`;
     return { ok: true, latencyMs: Math.round(performance.now() - started) };
   } catch (error) {
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : "Unknown database error",
-    };
+    console.error("[health] database check failed", error);
+    return { ok: false };
   }
 }

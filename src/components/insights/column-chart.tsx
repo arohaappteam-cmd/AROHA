@@ -18,7 +18,7 @@ export function ColumnChart({
   points,
   title,
   unit,
-  barClassName = "bg-primary",
+  barClassName = "bg-success",
   className,
 }: {
   points: readonly ColumnPoint[];

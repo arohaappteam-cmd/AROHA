@@ -150,16 +150,30 @@ export function displayDay(date: string): string {
   return weekLabel.format(parseDateOnly(date));
 }
 
+// Building a formatter is far costlier than using one, and these run once
+// per ledger row — so keep one per timezone.
+const dayHourFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function dayHourFormatter(timezone: string): Intl.DateTimeFormat {
+  let formatter = dayHourFormatters.get(timezone);
+  if (!formatter) {
+    // Validating builds a formatter too, so it happens once per timezone, here.
+    formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: isValidTimezone(timezone) ? timezone : "UTC",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      hourCycle: "h23",
+    });
+    dayHourFormatters.set(timezone, formatter);
+  }
+  return formatter;
+}
+
 /** An instant → the calendar day and hour it fell on in `timezone`. */
 export function localDayAndHour(instant: Date, timezone: string): { date: string; hour: number } {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: isValidTimezone(timezone) ? timezone : "UTC",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(instant);
+  const parts = dayHourFormatter(timezone).formatToParts(instant);
   const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
   return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) % 24 };
 }

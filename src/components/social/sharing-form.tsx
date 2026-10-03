@@ -17,7 +17,11 @@ const TOGGLES: { key: ToggleKey; label: string; detail: string }[] = [
   { key: "showLevel", label: "Level and XP", detail: "Your level, tier and total XP." },
   { key: "showSkills", label: "Skills", detail: "The skills you've built and how far you've taken them." },
   { key: "showAchievements", label: "Achievements", detail: "How many achievements you've unlocked." },
-  { key: "onLeaderboards", label: "Include me on leaderboards", detail: "Off by default. You can browse boards either way." },
+  {
+    key: "onLeaderboards",
+    label: "Include me on leaderboards",
+    detail: "Off by default. When on, your recent XP, achievement and challenge counts appear on boards — even if you hide them above.",
+  },
   { key: "openToMentoring", label: "I'm open to mentoring", detail: "Shows you to people asking for help in skills you've built." },
   { key: "seekingMentor", label: "I'm looking for a mentor", detail: "Lets mentors see that you'd welcome an offer." },
 ];
@@ -61,7 +65,7 @@ export function SharingForm({ initial }: { initial: SocialProfileInput }) {
               <p className="mt-0.5 text-sm text-muted-foreground text-pretty">
                 {option === "PRIVATE"
                   ? "Nobody sees your profile. You can still join guilds, take part in group challenges and browse."
-                  : "Members can see the parts of your record you choose below."}
+                  : "Members see your name, avatar, pronouns, bio, motto, interests, focus areas and guilds — plus whatever you turn on below."}
               </p>
             </label>
           ))}

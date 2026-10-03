@@ -223,7 +223,7 @@ export function AchievementStrip({ achievements }: { achievements: SkillPassport
     return (
       <Empty>
         No achievements yet — they unlock automatically.{" "}
-        <Link href="/journey" className="text-primary hover:underline">
+        <Link href="/journey#achievements" className="text-primary hover:underline">
           See what&apos;s possible
         </Link>
         .
@@ -262,7 +262,7 @@ export function ChallengesAndExperiences({
         {challenges.length === 0 ? (
           <Empty>
             None yet.{" "}
-            <Link href="/journey" className="text-primary hover:underline">
+            <Link href="/journey/challenges" className="text-primary hover:underline">
               Take on a challenge
             </Link>
             .

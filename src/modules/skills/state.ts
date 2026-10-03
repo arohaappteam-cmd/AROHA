@@ -114,6 +114,39 @@ export function frontierSkill(nodes: SkillNode[]): SkillNode | null {
   );
 }
 
+export type SkillPathState = "mastered" | "complete" | "current" | "started" | "next" | "locked";
+
+export type SkillPathStep = { slug: string; name: string; level: number; maxLevel: number; state: SkillPathState };
+
+/**
+ * A tree's journey in one line, in tree order: the skills already started
+ * (the most recent few), where practice lands now, and the nearest skill
+ * still locked. `complete` is the top level reached but not yet proven.
+ */
+export function skillPath(nodes: SkillNode[], maxStarted = 4): SkillPathStep[] {
+  const flat = flattenTree(nodes);
+  const frontier = frontierSkill(nodes);
+  const step = (node: SkillNode, state: SkillPathState): SkillPathStep => ({
+    slug: node.slug,
+    name: node.name,
+    level: node.progress.level,
+    maxLevel: node.maxLevel,
+    state,
+  });
+
+  const started = flat.filter((node) => node.progress.level >= 1 || node.status === "MASTERED");
+  const steps = started.slice(-maxStarted).map((node) =>
+    step(
+      node,
+      node.status === "MASTERED" ? "mastered" : node.slug === frontier?.slug ? "current" : node.progress.level >= node.maxLevel ? "complete" : "started",
+    ),
+  );
+  if (frontier && !started.includes(frontier)) steps.push(step(frontier, "next"));
+  const locked = flat.find((node) => node.status === "LOCKED");
+  if (locked) steps.push(step(locked, "locked"));
+  return steps;
+}
+
 /**
  * Resolves which skill an award should actually land in. A preferred skill
  * that is still locked pays into its requirement chain instead (practising

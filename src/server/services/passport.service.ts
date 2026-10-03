@@ -279,7 +279,7 @@ export async function getSkillPassport(): Promise<SkillPassport> {
     })),
     ...challenges.flatMap((challenge) =>
       challenge.completedAt
-        ? [{ id: `challenge-${challenge.id}`, date: challenge.completedAt, kind: "challenge" as const, title: challenge.title, detail: "Challenge completed", emoji: challenge.emoji, href: "/journey" }]
+        ? [{ id: `challenge-${challenge.id}`, date: challenge.completedAt, kind: "challenge" as const, title: challenge.title, detail: "Challenge completed", emoji: challenge.emoji, href: "/journey/challenges" }]
         : [],
     ),
   ]

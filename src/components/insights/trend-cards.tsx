@@ -11,16 +11,17 @@ import { ColumnChart, MiniColumns } from "./column-chart";
 const numberFormat = new Intl.NumberFormat("en");
 
 /**
- * Chart fills for the five core areas plus "Other" — the 600 steps, which
- * pass the colour-vision and contrast checks on both light and dark surfaces
- * in this order. Areas are always named beside their colour.
+ * Chart fills for the five core areas plus "Other" — steps of the one success
+ * hue, strongest first, so the chart stays in the monochrome theme. Areas are
+ * always named beside their swatch, so the ramp never has to carry identity
+ * on its own.
  */
 const AREA_FILL: Partial<Record<LifeArea | "OTHER", string>> = {
-  PHYSICAL: "bg-orange-600",
-  MENTAL: "bg-sky-600",
-  LEARNING: "bg-amber-600",
-  SOCIAL: "bg-rose-600",
-  PERSONAL_GOAL: "bg-violet-600",
+  PHYSICAL: "bg-success",
+  MENTAL: "bg-success/82",
+  LEARNING: "bg-success/66",
+  SOCIAL: "bg-success/52",
+  PERSONAL_GOAL: "bg-success/40",
 };
 const areaFill = (key: LifeArea | "OTHER") => AREA_FILL[key] ?? "bg-muted-foreground/45";
 
@@ -41,7 +42,7 @@ export function StatTotals({ overview }: { overview: AnalyticsOverview }) {
                   <>Same as {overview.range.previousLabel}</>
                 ) : (
                   <>
-                    <span className={cn("font-medium", change > 0 && "text-emerald-600 dark:text-emerald-300")}>
+                    <span className={cn("font-medium", change > 0 && "text-success")}>
                       {change > 0 ? "▲" : "▼"} {numberFormat.format(Math.abs(change))}
                     </span>{" "}
                     vs {overview.range.previousLabel}

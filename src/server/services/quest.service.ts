@@ -1,10 +1,10 @@
 import "server-only";
 
 import { Prisma, type User } from "@/generated/prisma/client";
-import type { DayEnergy, QuestStatus } from "@/generated/prisma/enums";
+import type { DayEnergy, LifeArea, QuestStatus } from "@/generated/prisma/enums";
 import { formatDateOnly, parseDateOnly, todayInTimezone } from "@/modules/goals/dates";
 import { nextStep } from "@/modules/goals/progress";
-import { focusAreas, resolveLifeAreas } from "@/modules/identity/life-areas";
+import { CORE_DAILY_LIFE_AREAS, focusAreas, resolveLifeAreas } from "@/modules/identity/life-areas";
 import { DEFAULT_PREFERENCES } from "@/modules/identity/preferences";
 import { CORE_SLOTS, type QuestSlot } from "@/modules/quests/categories";
 import {
@@ -293,7 +293,25 @@ export async function completeQuest(user: Pick<User, "id" | "timezone">, input: 
     console.error("Achievement check failed for quest", quest.id, error);
   }
 
-  return { missionCompleted, progression: outcome, skill, challenges: challengeOutcome, experiment, achievements: unlocked };
+  return {
+    missionCompleted,
+    progression: outcome,
+    skill,
+    challenges: challengeOutcome,
+    experiment,
+    achievements: unlocked,
+    day: quest.dailyQuestSet ? dayByArea(await questRepository.setTally(quest.dailyQuestSet.id)) : [],
+    lifeArea: quest.lifeArea,
+  };
+}
+
+/** The day's quests per area, core areas first and always present. */
+function dayByArea(quests: readonly { lifeArea: LifeArea; status: QuestStatus }[]) {
+  const areas = [...CORE_DAILY_LIFE_AREAS, ...new Set(quests.map((entry) => entry.lifeArea).filter((area) => !CORE_DAILY_LIFE_AREAS.includes(area)))];
+  return areas.map((lifeArea) => {
+    const mine = quests.filter((entry) => entry.lifeArea === lifeArea);
+    return { lifeArea, completed: mine.filter((entry) => entry.status === "COMPLETED").length, offered: mine.length };
+  });
 }
 
 /** Add or edit the reflection on a completed quest (any day — it's the user's record). */

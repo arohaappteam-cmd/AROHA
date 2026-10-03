@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 
 import { validationFailure, type ActionResult, type ActionResultWith } from "@/lib/action-result";
 import type { QuestCompletionPayload } from "@/modules/quests/completion";
@@ -23,6 +24,7 @@ async function run(task: (user: User) => Promise<unknown>, message?: string): Pr
     const user = await getCurrentUser();
     await task(user);
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof quests.QuestError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };
@@ -82,6 +84,7 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
       data: result,
     };
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof quests.QuestError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };

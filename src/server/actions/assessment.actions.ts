@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { validationFailure, type ActionResult } from "@/lib/action-result";
 import {
@@ -21,6 +21,7 @@ async function submit(task: (userId: string) => Promise<assessments.SubmissionOu
     const user = await getCurrentUser();
     attemptId = (await task(user.id)).attemptId;
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof assessments.AssessmentError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };

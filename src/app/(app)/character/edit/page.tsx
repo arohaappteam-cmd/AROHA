@@ -4,6 +4,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import { AppearanceEditor } from "@/components/character/edit/appearance-editor";
+import { DeleteAccount } from "@/components/character/edit/delete-account";
 import { EditorSection } from "@/components/character/edit/editor-section";
 import { InterestsEditor } from "@/components/character/edit/interests-editor";
 import { LifeAreasEditor, type LifeAreasEditorValue } from "@/components/character/edit/life-areas-editor";
@@ -14,6 +15,7 @@ import { buttonVariants } from "@/components/ui/button";
 import type { LifeArea } from "@/generated/prisma/enums";
 import { MAX_FOCUS_AREAS } from "@/modules/identity/life-areas";
 import { listTimezones } from "@/modules/identity/timezones";
+import { isAuthEnabled } from "@/server/auth/current-user";
 import { getCharacterSheet } from "@/server/services/character.service";
 
 export const metadata: Metadata = { title: "Customize character" };
@@ -24,6 +26,7 @@ const SECTIONS = [
   { id: "interests", label: "Interests" },
   { id: "life-areas", label: "Life areas" },
   { id: "preferences", label: "Preferences" },
+  { id: "account", label: "Account" },
 ] as const;
 
 export default async function EditCharacterPage() {
@@ -119,6 +122,10 @@ export default async function EditCharacterPage() {
           movementOptions: sheet.preferences.movementOptions,
           learningFormats: sheet.preferences.learningFormats,
         }} />
+      </EditorSection>
+
+      <EditorSection id="account" title="Account" description="Your record belongs to you — including the choice to remove it.">
+        <DeleteAccount hasSignIn={isAuthEnabled()} />
       </EditorSection>
     </div>
   );

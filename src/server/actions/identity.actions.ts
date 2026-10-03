@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { validationFailure, type ActionResult } from "@/lib/action-result";
@@ -22,6 +23,7 @@ async function run(task: (userId: string) => Promise<unknown>, message: string):
     const user = await getCurrentUser();
     await task(user.id);
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof identity.IdentityError) {
       return { ok: false, error: error.message };
     }

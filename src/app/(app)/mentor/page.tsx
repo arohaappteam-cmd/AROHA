@@ -1,81 +1,69 @@
-import { ChartLineIcon, SparklesIcon } from "lucide-react";
+import { ChartLineIcon, CompassIcon, GitBranchIcon, MessageCircleIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { connection } from "next/server";
 
-import {
-  AnalysisCard,
-  GoalGuidanceCard,
-  RecommendationsCard,
-  SkillGapCard,
-} from "@/components/mentor/insight-cards";
 import { PageHeader } from "@/components/common/page-header";
-import { LessonView } from "@/components/quests/lesson-view";
+import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getMentorPanel } from "@/server/services/mentor.service";
 
-export const metadata: Metadata = { title: "Mentor" };
+export const metadata: Metadata = { title: "Mentor — coming soon" };
 
-export default async function MentorPage() {
-  await connection();
-  const panel = await getMentorPanel();
-  const { insights } = panel;
-  const usingFallback = panel.source.insights === "fallback";
+const PREVIEW = [
+  { title: "Reads your whole record", detail: "Goals, quests, skills and reflections — so its guidance starts from where you actually are." },
+  { title: "Suggests the next step", detail: "One concrete thing to do next, sized for the energy you have this week." },
+  { title: "Points out skill gaps", detail: "What's standing between you and the goals you've set, in plain language." },
+];
 
+/**
+ * The AI Mentor is switched off for launch. The route stays so old links
+ * land somewhere honest; the nav shows it with a "Soon" badge.
+ */
+export default function MentorPage() {
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="AI Mentor"
-        title={insights.headline}
-        description={
-          panel.aiConfigured
-            ? "Your mentor reads your goals, quests and reflections to guide what's next."
-            : "Built-in guidance for now. Connect an AI model to make the mentor personal to you."
-        }
-        actions={
-          <Link href="/insights" className={buttonVariants({ variant: "outline", size: "sm" })}>
-            <ChartLineIcon data-icon="inline-start" />
-            Your trends
-          </Link>
-        }
+        title="Your mentor is on the way"
+        description="A guide that reads your progress and helps you decide what's next. It isn't switched on yet — everything else in AROHA works without it."
       />
 
-      {!panel.aiConfigured && usingFallback && (
-        <p className="flex items-start gap-2 rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-          <SparklesIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <span>
-            The AI Mentor runs on Claude. Set <code className="rounded bg-background px-1">AI_PROVIDER=anthropic</code> and{" "}
-            <code className="rounded bg-background px-1">ANTHROPIC_API_KEY</code> to turn it on. Everything below is AROHA&apos;s
-            deterministic guidance in the meantime.
-          </span>
-        </p>
-      )}
+      <Card>
+        <CardContent className="space-y-5">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-xl bg-muted">
+              <MessageCircleIcon className="size-5" aria-hidden />
+            </span>
+            <Badge variant="outline">Coming soon</Badge>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-3">
+            {PREVIEW.map((item) => (
+              <li key={item.title} className="space-y-1">
+                <p className="text-sm font-medium">{item.title}</p>
+                <p className="text-sm text-pretty text-muted-foreground">{item.detail}</p>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
 
-      <AnalysisCard analysis={insights.analysis} />
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <RecommendationsCard recommendations={insights.recommendations} />
-        <SkillGapCard skillGaps={insights.skillGaps} />
-      </div>
-
-      {insights.goalGuidance && <GoalGuidanceCard guidance={insights.goalGuidance} />}
-
-      <section aria-labelledby="discovery-title" className="space-y-3">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 id="discovery-title" className="text-lg font-semibold">
-            Today&apos;s discovery
-          </h2>
-          <span className="text-xs text-muted-foreground">
-            {panel.source.discovery === "ai" ? "Written for you" : "From the lesson library"}
-          </span>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">In the meantime:</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/insights" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <ChartLineIcon data-icon="inline-start" />
+            See your trends
+          </Link>
+          <Link href="/skills" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <GitBranchIcon data-icon="inline-start" />
+            Practise a skill
+          </Link>
+          <Link href="/discover" className={buttonVariants({ variant: "outline", size: "sm" })}>
+            <CompassIcon data-icon="inline-start" />
+            Try an experiment
+          </Link>
         </div>
-        <Card>
-          <CardContent className="py-2">
-            <LessonView lesson={panel.discovery} />
-          </CardContent>
-        </Card>
-      </section>
+      </div>
     </div>
   );
 }

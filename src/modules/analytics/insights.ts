@@ -101,7 +101,7 @@ export type InsightModelInput = {
   allowedLinks: string[];
 };
 
-const STATIC_LINKS = ["/", "/goals", "/goals/new", "/projects", "/projects/new", "/journey", "/skills", "/discover", "/mentor", "/journal/reflect", "/character/edit#preferences"];
+const STATIC_LINKS = ["/", "/goals", "/goals/new", "/projects", "/projects/new", "/journey", "/journey/challenges", "/skills", "/discover", "/journal/reflect", "/character/edit#preferences"];
 
 export function allowedLinks(patterns: readonly Pattern[], overview: Pick<AnalyticsOverview, "goals">): string[] {
   const links = new Set(STATIC_LINKS);

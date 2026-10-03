@@ -10,14 +10,23 @@ if (!databaseUrl) throw new Error("DATABASE_URL is not set");
 
 const prisma = createPrismaClient(databaseUrl);
 
+// Mirrors src/config/env.ts: real accounts when Supabase is configured.
+const usesAccounts =
+  (process.env.AUTH_MODE ?? (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ? "supabase" : "local")) ===
+  "supabase";
+
 async function main() {
-  // Idempotent: the app also creates this user lazily on first request.
-  const user = await prisma.user.upsert({
-    where: { handle: LOCAL_USER_HANDLE },
-    update: {},
-    create: { handle: LOCAL_USER_HANDLE, displayName: LOCAL_USER_DEFAULT_NAME },
-  });
-  console.log(`Local user ready: ${user.displayName} (${user.id})`);
+  if (usesAccounts) {
+    console.log("Supabase Auth is on: users are created when they sign up, so no local user is seeded.");
+  } else {
+    // Idempotent: the app also creates this user lazily on first request.
+    const user = await prisma.user.upsert({
+      where: { handle: LOCAL_USER_HANDLE },
+      update: {},
+      create: { handle: LOCAL_USER_HANDLE, displayName: LOCAL_USER_DEFAULT_NAME },
+    });
+    console.log(`Local user ready: ${user.displayName} (${user.id})`);
+  }
 
   // Idempotent: the app also syncs the catalogue lazily on first use.
   await syncSkillCatalogue(prisma);

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs } from "@/components/social/community-chrome";
 import { BoardChooser, LeaderboardTable } from "@/components/social/leaderboard";
 import { SelfComparisonCard } from "@/components/social/self-comparison";
 import { resolveMetric } from "@/modules/social/leaderboards";
@@ -26,7 +26,6 @@ export default async function LeaderboardsPage(props: PageProps<"/community/lead
         description="AROHA measures you against your own previous month. Leaderboards exist because some people find them motivating — they are optional to appear on and optional to look at."
       />
       <CommunityTabs active="/community/leaderboards" />
-      <DemoNotice kind={view.directoryKind} />
 
       <SelfComparisonCard comparison={view.comparison} compact />
 

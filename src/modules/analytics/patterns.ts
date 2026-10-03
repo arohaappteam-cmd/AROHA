@@ -70,8 +70,8 @@ const AREA_RESTART: Partial<Record<LifeArea, Recommendation>> = {
   LEARNING: {
     title: "Pick one small thing to learn",
     detail: "A single short lesson restarts the habit. Choose a topic you're curious about rather than one you ought to learn.",
-    href: "/mentor",
-    actionLabel: "Today's discovery",
+    href: "/skills",
+    actionLabel: "Pick a skill to practise",
   },
   SOCIAL: {
     title: "Reach out to one person",
@@ -458,7 +458,7 @@ function challengePatterns(dataset: AnalyticsDataset): Pattern[] {
         recommendation: {
           title: "Try a shorter challenge",
           detail: "A 7-day challenge you finish does more for momentum than a 30-day one you don't.",
-          href: "/journey",
+          href: "/journey/challenges",
           actionLabel: "Browse challenges",
         },
       },

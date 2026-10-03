@@ -4,6 +4,7 @@ import {
   ACHIEVEMENTS,
   earnedAchievements,
   type AchievementFacts,
+  type AchievementRarity,
   type UnlockedAchievement,
 } from "@/modules/achievements/catalogue";
 import { skillLevelForXp } from "@/modules/skills/levels";
@@ -120,13 +121,16 @@ export type AchievementView = {
   emoji: string;
   hint: string;
   xpReward: number;
+  rarity: AchievementRarity;
   unlockedAt: Date | null;
+  /** Count-based progress toward it, while still locked. */
+  progress: { current: number; target: number } | null;
 };
 
-/** The full catalogue with the user's unlock dates, for the Journey page. */
+/** The full catalogue with the user's unlock dates and progress, for the Journey page. */
 export async function getAchievementsView(userId: string): Promise<AchievementView[]> {
   await ensureAchievementCatalogue();
-  const unlocked = await achievementRepository.listUnlocked(userId);
+  const [unlocked, facts] = await Promise.all([achievementRepository.listUnlocked(userId), gatherFacts(userId)]);
   const dates = new Map(unlocked.map((entry) => [entry.achievement.slug, entry.unlockedAt]));
 
   return ACHIEVEMENTS.map((spec) => ({
@@ -136,6 +140,8 @@ export async function getAchievementsView(userId: string): Promise<AchievementVi
     emoji: spec.emoji,
     hint: spec.hint,
     xpReward: spec.xpReward,
+    rarity: spec.rarity,
     unlockedAt: dates.get(spec.slug) ?? null,
+    progress: dates.has(spec.slug) ? null : (spec.progress?.(facts) ?? null),
   }));
 }

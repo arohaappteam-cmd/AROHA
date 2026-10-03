@@ -1,4 +1,4 @@
-import { FlaskConicalIcon } from "lucide-react";
+import { EyeOffIcon } from "lucide-react";
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
@@ -35,18 +35,20 @@ export function CommunityTabs({ active }: { active: CommunityTab }) {
 }
 
 /**
- * Said plainly, on every community page: these people are a demonstration.
- * Nothing here is a real account and nothing the user does is sent anywhere.
+ * Shown while the viewer's own profile is private: they can browse and join,
+ * but nobody can find them or ask them anything until they choose otherwise.
  */
-export function DemoNotice({ kind }: { kind: "seeded" | "live" }) {
-  if (kind === "live") return null;
+export function PrivateProfileNotice({ visibility }: { visibility: "PRIVATE" | "COMMUNITY" }) {
+  if (visibility === "COMMUNITY") return null;
   return (
     <p className="flex items-start gap-2 rounded-lg border border-dashed bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-      <FlaskConicalIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <EyeOffIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
       <span>
-        <strong className="font-medium text-foreground">A preview of the social layer.</strong> The people, guilds and group
-        challenges here are sample data, not real accounts — nothing you do is sent to anyone. What is real is your side: guilds
-        you join, challenges you start and mentorships you record are kept in your own account.
+        <strong className="font-medium text-foreground">Your profile is private.</strong> You can browse, join guilds and take part in
+        group challenges, but other members can&apos;t find you or ask you to mentor.{" "}
+        <Link href="/community/profile" className="underline underline-offset-4">
+          Change what you share
+        </Link>
       </span>
     </p>
   );

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs } from "@/components/social/community-chrome";
 import { GroupChallengeCard } from "@/components/social/group-challenge-card";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getGroupChallenges } from "@/server/services/social.service";
@@ -23,11 +23,10 @@ export default async function GroupChallengesPage() {
         description="The same commitment, attempted alongside other people. Joining one starts your own challenge — days are earned by completing matching quests, exactly as they would be alone."
       />
       <CommunityTabs active="/community/challenges" />
-      <DemoNotice kind="seeded" />
 
       <p className="text-sm text-muted-foreground">
         Two challenges at a time is still the limit, group or not. Yours live on{" "}
-        <Link href="/journey" className="underline underline-offset-4">
+        <Link href="/journey/challenges" className="underline underline-offset-4">
           Journey
         </Link>{" "}
         with everything else.

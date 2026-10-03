@@ -89,7 +89,7 @@ function NodeDetail({ node, unlocks }: { node: SkillNode; unlocks: SkillNode[] }
           </div>
           <Progress value={progress.percent} aria-label={`${node.name} progress`} className="gap-0">
             <ProgressTrack className="h-1.5">
-              <ProgressIndicator className={meta.dot} />
+              <ProgressIndicator />
             </ProgressTrack>
           </Progress>
           {node.status === "AVAILABLE" && (

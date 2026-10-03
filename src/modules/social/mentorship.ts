@@ -102,7 +102,7 @@ export function findMentees(people: readonly SocialPerson[], viewerCanMentorIn: 
       {
         person,
         topics: trees.map(treeLabel),
-        reasons: [`Looking for help with ${trees.map(treeLabel).join(" and ")}`, `${person.tier === "beginner" ? "Just starting out" : "Still finding their footing"} — ${person.joinedDaysAgo} days in`],
+        reasons: [`Looking for help with ${trees.map(treeLabel).join(" and ")}`, `${person.tier === "beginner" ? "Just starting out" : "Still finding their footing"} — ${person.joinedDaysAgo === 0 ? "joined today" : `${person.joinedDaysAgo} days in`}`],
       },
     ];
   });
@@ -130,9 +130,8 @@ export function mentorshipChains(people: readonly SocialPerson[]): MentorshipCha
 }
 
 /**
- * What a new mentorship actually consists of. Seeded and deterministic: the
- * demo never pretends a message was answered by a real person, it just shows
- * how a mentorship would be set up.
+ * How to make a new mentorship work — the same short guidance for everyone,
+ * from the side the viewer is on.
  */
 export function startingPlan(topic: string, role: "MENTEE" | "MENTOR"): string[] {
   return role === "MENTEE"

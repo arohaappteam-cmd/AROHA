@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs } from "@/components/social/community-chrome";
 import { GroupChallengeCard } from "@/components/social/group-challenge-card";
 import { GuildMembershipButton } from "@/components/social/membership-buttons";
 import { PersonRow } from "@/components/social/person-card";
@@ -39,7 +39,6 @@ export default async function GuildPage(props: PageProps<"/community/guilds/[slu
         actions={<GuildMembershipButton slug={guild.slug} joined={detail.joined} size="default" />}
       />
       <CommunityTabs active="/community/guilds" />
-      <DemoNotice kind="seeded" />
 
       {detail.shared.length > 0 && (
         <p className="text-sm text-muted-foreground">
@@ -106,11 +105,16 @@ export default async function GuildPage(props: PageProps<"/community/guilds/[slu
             Members
           </CardTitle>
           <CardDescription>
-            A few of the {guild.memberCount.toLocaleString("en")} people here. Mentors are marked — they&apos;ve said they&apos;re
-            open to helping.
+            {guild.memberCount.toLocaleString("en")} {guild.memberCount === 1 ? "member" : "members"}. Those with a visible profile are
+            listed; mentors are marked — they&apos;ve said they&apos;re open to helping.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {detail.members.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              {detail.joined ? "No other member here has a visible profile yet." : "No visible members yet — be one of the first."}
+            </p>
+          )}
           <ul className="divide-y">
             {detail.members.map((person) => (
               <PersonRow

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon, LoaderCircleIcon } from "lucide-react";
+import { ArrowRightIcon, CheckIcon, LoaderCircleIcon, SendIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 
 import { useActionRunner } from "@/components/goals/use-action-runner";
@@ -8,13 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_MENTORSHIP_MESSAGE } from "@/modules/social/schemas";
-import { endMentorshipAction, requestMentorshipAction } from "@/server/actions/social.actions";
+import { MAX_MENTORSHIP_MESSAGE, MAX_MENTORSHIP_NOTE } from "@/modules/social/schemas";
+import {
+  endMentorshipAction,
+  requestMentorshipAction,
+  respondMentorshipAction,
+  sendMentorshipNoteAction,
+} from "@/server/actions/social.actions";
 
 /**
- * Asking someone to mentor you, or offering to mentor someone. In this
- * preview the other side is sample data, so the form says plainly that no
- * message is delivered — what's recorded is the user's own intent and plan.
+ * Asking someone to mentor you, or offering to mentor someone. The request
+ * reaches them on their Mentorship page; nothing starts until they accept.
  */
 export function MentorshipRequestForm({
   handle,
@@ -75,7 +79,7 @@ export function MentorshipRequestForm({
       </div>
 
       <p className="text-xs text-muted-foreground">
-        {name} is a sample member, so nothing is sent. The mentorship is recorded on your side with a starting plan.
+        {name} will see your request and your note, and can accept or decline. Your email is never shared.
       </p>
 
       <Button type="submit" size="sm" disabled={pending || topic.trim().length === 0}>
@@ -112,13 +116,38 @@ export function MentorshipRequestToggle(props: {
   return <MentorshipRequestForm {...props} onDone={() => setOpen(false)} />;
 }
 
-export function EndMentorshipButton({ mentorshipId }: { mentorshipId: string }) {
+/** Accept or decline a request someone sent the viewer. */
+export function RespondButtons({ mentorshipId }: { mentorshipId: string }) {
+  const { pending, error, run } = useActionRunner();
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={pending} onClick={() => run(() => respondMentorshipAction({ mentorshipId, accept: true }))}>
+          {pending ? <LoaderCircleIcon data-icon="inline-start" className="animate-spin" /> : <CheckIcon data-icon="inline-start" />}
+          Accept
+        </Button>
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => respondMentorshipAction({ mentorshipId, accept: false }))}>
+          <XIcon data-icon="inline-start" />
+          Decline
+        </Button>
+      </div>
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Closes an active mentorship, or withdraws a request still waiting. */
+export function EndMentorshipButton({ mentorshipId, label = "Close this mentorship" }: { mentorshipId: string; label?: string }) {
   const { pending, error, run } = useActionRunner();
   return (
     <div className="space-y-1">
       <Button size="sm" variant="ghost" disabled={pending} onClick={() => run(() => endMentorshipAction(mentorshipId))}>
         {pending && <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />}
-        Close this mentorship
+        {label}
       </Button>
       {error && (
         <p role="alert" className="text-xs text-destructive">
@@ -126,5 +155,47 @@ export function EndMentorshipButton({ mentorshipId }: { mentorshipId: string }) 
         </p>
       )}
     </div>
+  );
+}
+
+/** One note to the other member. Deliberate and short — not a chat box. */
+export function MentorshipNoteForm({ mentorshipId, name }: { mentorshipId: string; name: string }) {
+  const { pending, error, run } = useActionRunner();
+  const [body, setBody] = useState("");
+
+  return (
+    <form
+      className="space-y-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        run(() => sendMentorshipNoteAction({ mentorshipId, body }), () => setBody(""));
+      }}
+    >
+      <Label htmlFor="note" className="sr-only">
+        Note to {name}
+      </Label>
+      <Textarea
+        id="note"
+        rows={3}
+        maxLength={MAX_MENTORSHIP_NOTE}
+        placeholder={`A note to ${name} — what you did, what you're stuck on, when to talk next.`}
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {body.length}/{MAX_MENTORSHIP_NOTE}
+        </span>
+        <Button type="submit" size="sm" disabled={pending || body.trim().length === 0}>
+          {pending ? <LoaderCircleIcon data-icon="inline-start" className="animate-spin" /> : <SendIcon data-icon="inline-start" />}
+          Send note
+        </Button>
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </form>
   );
 }

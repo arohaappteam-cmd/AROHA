@@ -109,7 +109,7 @@ export type SkillGain = {
 };
 
 /** XP and levels gained per skill inside `window`, most progress first. */
-export function skillGains(dataset: AnalyticsDataset, window: DayWindow): SkillGain[] {
+export function skillGains(dataset: Pick<AnalyticsDataset, "skillXp" | "skills">, window: DayWindow): SkillGain[] {
   const before = new Map<string, number>();
   const during = new Map<string, number>();
   for (const row of dataset.skillXp) {

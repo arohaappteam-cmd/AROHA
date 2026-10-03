@@ -1,13 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { validationFailure, type ActionResult } from "@/lib/action-result";
 import {
   groupKeySchema,
   guildSlugSchema,
+  mentorshipNoteSchema,
   mentorshipRequestSchema,
+  mentorshipResponseSchema,
   socialProfileSchema,
 } from "@/modules/social/schemas";
 import { getCurrentUser } from "@/server/auth/current-user";
@@ -21,6 +24,7 @@ async function run(task: () => Promise<unknown>, message: string): Promise<Actio
   try {
     await task();
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof social.SocialError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };
@@ -70,9 +74,17 @@ export async function requestMentorshipAction(input: unknown): Promise<ActionRes
   const user = await getCurrentUser();
   return run(
     () => social.requestMentorship(user, parsed.data),
-    parsed.data.role === "MENTEE"
-      ? "Mentorship recorded. In this preview the other side is a sample member, so nobody was actually messaged."
-      : "Offer recorded. In this preview the other side is a sample member, so nobody was actually messaged.",
+    "Request sent. It shows up on their Mentorship page, and they can accept or decline.",
+  );
+}
+
+export async function respondMentorshipAction(input: unknown): Promise<ActionResult> {
+  const parsed = mentorshipResponseSchema.safeParse(input);
+  if (!parsed.success) return validationFailure(parsed.error);
+  const user = await getCurrentUser();
+  return run(
+    () => social.respondToMentorship(user, parsed.data.mentorshipId, parsed.data.accept),
+    parsed.data.accept ? "Accepted. You can leave each other notes from the mentorship page." : "Declined. They won't be told why.",
   );
 }
 
@@ -80,7 +92,14 @@ export async function endMentorshipAction(mentorshipId: unknown): Promise<Action
   const parsed = idSchema.safeParse(mentorshipId);
   if (!parsed.success) return validationFailure(parsed.error);
   const user = await getCurrentUser();
-  return run(() => social.endMentorship(user, parsed.data), "Mentorship closed. It stays in your record.");
+  return run(() => social.endMentorship(user, parsed.data), "Closed. It stays in your record.");
+}
+
+export async function sendMentorshipNoteAction(input: unknown): Promise<ActionResult> {
+  const parsed = mentorshipNoteSchema.safeParse(input);
+  if (!parsed.success) return validationFailure(parsed.error);
+  const user = await getCurrentUser();
+  return run(() => social.sendMentorshipMessage(user, parsed.data.mentorshipId, parsed.data.body), "Sent.");
 }
 
 export async function saveSocialProfileAction(input: unknown): Promise<ActionResult> {

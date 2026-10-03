@@ -65,6 +65,9 @@ const TIERS = [
 
 export type TierTitle = (typeof TIERS)[number]["title"];
 
+/** The tiers in the order they're reached, lowest first. */
+export const TIER_LADDER: readonly { minLevel: number; title: TierTitle }[] = [...TIERS].reverse();
+
 export function tierForLevel(level: number): TierTitle {
   return (TIERS.find((tier) => level >= tier.minLevel) ?? TIERS.at(-1)!).title;
 }

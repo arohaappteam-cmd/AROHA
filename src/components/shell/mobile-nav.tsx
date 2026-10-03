@@ -1,7 +1,7 @@
 "use client";
 
 import { MenuIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +15,8 @@ import { siteConfig } from "@/config/site";
 
 import { NavLinks } from "./nav-links";
 
-export function MobileNav() {
+/** `footer` is rendered under the links, e.g. the sign-out button. */
+export function MobileNav({ footer }: { footer?: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,6 +34,7 @@ export function MobileNav() {
         </SheetHeader>
         <div className="px-3">
           <NavLinks onNavigate={() => setOpen(false)} />
+          {footer && <div className="mt-3 border-t pt-3">{footer}</div>}
         </div>
       </SheetContent>
     </Sheet>

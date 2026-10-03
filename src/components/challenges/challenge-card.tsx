@@ -3,7 +3,6 @@
 import { CheckIcon, FlagIcon, LoaderCircleIcon } from "lucide-react";
 
 import { useActionRunner } from "@/components/goals/use-action-runner";
-import { categoryStyle } from "@/components/quests/category-style";
 import { Button } from "@/components/ui/button";
 import { Progress, ProgressIndicator, ProgressTrack } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -20,7 +19,6 @@ const STATUS_LABEL: Record<Exclude<ChallengeView["status"], "ACTIVE">, string> =
 /** One challenge — running or part of the record. Days earned always show. */
 export function ChallengeCard({ challenge }: { challenge: ChallengeView }) {
   const { pending, error, run } = useActionRunner();
-  const style = categoryStyle(challenge.lifeArea);
   const { progress } = challenge;
   const active = challenge.status === "ACTIVE";
 
@@ -74,7 +72,7 @@ export function ChallengeCard({ challenge }: { challenge: ChallengeView }) {
         </div>
         <Progress value={progress.percent} aria-label={`${challenge.title} progress`} className="gap-0">
           <ProgressTrack className="h-1.5">
-            <ProgressIndicator className={style.solid} />
+            <ProgressIndicator />
           </ProgressTrack>
         </Progress>
         {active && !progress.stillPossible && (

@@ -42,7 +42,7 @@ export function SkillTreeCard({ tree }: { tree: SkillTreeCardData }) {
               </p>
               <Progress value={frontier.percent} aria-label={`${frontier.name} progress`} className="gap-0">
                 <ProgressTrack>
-                  <ProgressIndicator className={style.solid} />
+                  <ProgressIndicator />
                 </ProgressTrack>
               </Progress>
             </div>

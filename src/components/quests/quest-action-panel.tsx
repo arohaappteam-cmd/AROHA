@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { LevelUpCelebration, useLevelUp } from "@/components/progression/level-up-celebration";
+import { QuestResult, useQuestResult } from "@/components/quests/quest-result";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,6 +46,7 @@ export function QuestActionPanel({ quest, reflectionPrompt }: { quest: QuestDeta
   const [asking, setAsking] = useState(false);
   const [editing, setEditing] = useState(false);
   const { levelUp, clearLevelUp, noticeProgression } = useLevelUp();
+  const { questResult, showQuestResult, clearQuestResult } = useQuestResult();
   const [completeMission, setCompleteMission] = useState(false);
   const [values, setValues] = useState<Values>({
     reflection: quest.completion?.note ?? "",
@@ -78,7 +80,10 @@ export function QuestActionPanel({ quest, reflectionPrompt }: { quest: QuestDeta
           startTransition(async () => {
             const next = await completeQuestAction({ questId: quest.id, ...values, completeMission });
             setResult(next);
-            if (next.ok) noticeProgression(next.data.progression);
+            if (next.ok) {
+              noticeProgression(next.data.progression);
+              if (!next.data.progression.leveledUp) showQuestResult({ title: quest.title, payload: next.data });
+            }
           });
         }
       }}
@@ -279,6 +284,7 @@ export function QuestActionPanel({ quest, reflectionPrompt }: { quest: QuestDeta
       )}
 
       {levelUp && <LevelUpCelebration outcome={levelUp} onClose={clearLevelUp} />}
+      {questResult && <QuestResult result={questResult} onClose={clearQuestResult} />}
     </div>
   );
 }

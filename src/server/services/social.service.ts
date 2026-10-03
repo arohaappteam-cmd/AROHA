@@ -1,14 +1,13 @@
 import "server-only";
 
 import type { User } from "@/generated/prisma/client";
-import type { LifeArea, MentorshipRole } from "@/generated/prisma/enums";
+import type { LifeArea, MentorshipRole, MentorshipStatus } from "@/generated/prisma/enums";
 import { buildAnalyticsDataset } from "@/server/services/analytics.service";
 import { buildOverview } from "@/modules/analytics/overview";
-import { formatDateOnly, todayInTimezone } from "@/modules/goals/dates";
 import { toAppearance, type AvatarAppearance } from "@/modules/identity/avatar";
 import { focusAreas as pickFocusAreas, resolveLifeAreas } from "@/modules/identity/life-areas";
 import { getLevelProgress, tierForLevel, type TierTitle } from "@/modules/progression";
-import { seededDirectory, type SocialDirectory } from "@/modules/social/directory";
+import type { SocialDirectory } from "@/modules/social/directory";
 import {
   buildBoard,
   compareToPreviousSelf,
@@ -35,30 +34,31 @@ import {
   type MentorMatch,
   type MentorshipChain,
 } from "@/modules/social/mentorship";
-import type { MentorshipRequestInput, SocialProfileInput } from "@/modules/social/schemas";
+import { MAX_MENTORSHIP_NOTE, type MentorshipRequestInput, type SocialProfileInput } from "@/modules/social/schemas";
 import type { GroupChallenge, Guild, MentorTier, SocialPerson } from "@/modules/social/types";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { progressionRepository } from "@/server/repositories/progression.repository";
 import { socialRepository } from "@/server/repositories/social.repository";
+import { userRepository } from "@/server/repositories/user.repository";
 import * as challenges from "@/server/services/challenge.service";
+import { liveDirectory } from "@/server/services/community-directory";
 import { getSkillsOverview } from "@/server/services/skill.service";
 
 /**
- * The community layer (spec §44–46) — a demonstration, not a network.
+ * The community layer (spec §44–46): real members, met through guilds, group
+ * challenges and mentorship. There is no feed.
  *
- * Everyone the user meets here comes from `SocialDirectory`, which today
- * serves seeded sample people. There is no second account, no messaging and
- * no feed. What *is* real is the user's side: the guilds they join, the group
- * challenges they enter (which start an ordinary personal challenge, earned
- * through real quests) and the mentorships they record.
+ * Everyone the user meets comes from `SocialDirectory`, which only returns
+ * members who made their profile visible, and only the parts they chose to
+ * share. The viewer never appears in their own results.
  *
  * Nothing about the user is shared until they choose it: a social profile is
  * PRIVATE until changed, and leaderboards list nobody who hasn't opted in.
  */
 
-type UserLike = Pick<User, "id" | "timezone" | "displayName">;
+type UserLike = Pick<User, "id" | "timezone" | "displayName" | "handle">;
 
 export class SocialError extends Error {
   constructor(message: string) {
@@ -67,8 +67,8 @@ export class SocialError extends Error {
   }
 }
 
-/** Swappable for a database-backed directory when real accounts arrive. */
-let directory: SocialDirectory = seededDirectory;
+/** The live directory; tests may swap in their own. */
+let directory: SocialDirectory = liveDirectory;
 
 export function setSocialDirectory(next: SocialDirectory): void {
   directory = next;
@@ -167,6 +167,16 @@ async function buildViewer(user: UserLike): Promise<Viewer> {
   };
 }
 
+/** Everyone visible except the viewer. */
+async function othersThan(user: UserLike): Promise<SocialPerson[]> {
+  return (await directory.listPeople()).filter((person) => person.handle !== user.handle);
+}
+
+async function guildsBySlug(slugs: readonly string[]): Promise<Guild[]> {
+  const guilds = await Promise.all(slugs.map((slug) => directory.findGuild(slug)));
+  return guilds.filter((guild): guild is Guild => guild !== undefined);
+}
+
 /** The user's own numbers, on the same windows the community members show. */
 export type ViewerStats = {
   xpRecent: number;
@@ -218,40 +228,34 @@ export function selfComparison(stats: ViewerStats): SelfComparison[] {
 export type GroupChallengeView = {
   challenge: GroupChallenge;
   guild: Guild;
-  /** Day the group's window opened, and how far through it is. */
-  startDate: string;
-  dayOfWindow: number;
+  /** Visible members running it now; `others` counts the private ones. */
   participants: { person: SocialPerson; daysDone: number; percent: number }[];
+  others: number;
   /** The user's own challenge, when they've joined. */
   you: { joined: true; daysDone: number; percent: number; status: string; challengeId: string | null } | { joined: false };
 };
 
 type GroupEntry = Awaited<ReturnType<typeof socialRepository.listGroupEntries>>[number];
 
-function toGroupView(challenge: GroupChallenge, entry: GroupEntry | undefined, today: string): GroupChallengeView {
-  const guild = directory.findGuild(challenge.guildSlug)!;
-  const startDate = formatDateOnly(new Date(Date.parse(`${today}T00:00:00.000Z`) - challenge.startedDaysAgo * 86_400_000));
-  const participants = challenge.participants
-    .flatMap((participant) => {
-      const person = directory.findPerson(participant.handle);
-      return person
-        ? [{ person, daysDone: participant.daysDone, percent: Math.min(100, Math.round((participant.daysDone / challenge.targetDays) * 100)) }]
-        : [];
-    })
-    .sort((a, b) => b.daysDone - a.daysDone);
+const percentOf = (days: number, target: number) => Math.min(100, Math.round((days / target) * 100));
 
+async function toGroupView(user: UserLike, challenge: GroupChallenge, entry: GroupEntry | undefined): Promise<GroupChallengeView> {
+  const [guild, participants] = await Promise.all([
+    directory.findGuild(challenge.guildSlug),
+    directory.groupParticipants(challenge.key, user.handle),
+  ]);
   const daysDone = entry?.challenge?.days.length ?? 0;
+
   return {
     challenge,
-    guild,
-    startDate,
-    dayOfWindow: Math.min(challenge.startedDaysAgo + 1, challenge.durationDays),
-    participants,
+    guild: guild!,
+    participants: participants.visible.map(({ person, daysDone: days }) => ({ person, daysDone: days, percent: percentOf(days, challenge.targetDays) })),
+    others: participants.others,
     you: entry
       ? {
           joined: true,
           daysDone,
-          percent: Math.min(100, Math.round((daysDone / challenge.targetDays) * 100)),
+          percent: percentOf(daysDone, challenge.targetDays),
           status: entry.challenge?.status ?? "ENDED",
           challengeId: entry.challengeId,
         }
@@ -260,13 +264,11 @@ function toGroupView(challenge: GroupChallenge, entry: GroupEntry | undefined, t
 }
 
 export async function getGroupChallenges(user: UserLike): Promise<GroupChallengeView[]> {
-  const today = todayInTimezone(user.timezone);
   const entries = await socialRepository.listGroupEntries(user.id);
   const byKey = new Map(entries.map((entry) => [entry.groupKey, entry]));
-  return directory
-    .listGroupChallenges()
-    .map((challenge) => toGroupView(challenge, byKey.get(challenge.key), today))
-    .sort((a, b) => Number(b.you.joined) - Number(a.you.joined) || a.challenge.startedDaysAgo - b.challenge.startedDaysAgo);
+  const views = await Promise.all(directory.listGroupChallenges().map((challenge) => toGroupView(user, challenge, byKey.get(challenge.key))));
+  const company = (view: GroupChallengeView) => view.participants.length + view.others;
+  return views.sort((a, b) => Number(b.you.joined) - Number(a.you.joined) || company(b) - company(a));
 }
 
 // ─── Guilds ──────────────────────────────────────────────────────────────────
@@ -280,15 +282,19 @@ export type GuildsView = {
 };
 
 export async function getGuilds(user: UserLike): Promise<GuildsView> {
-  const { context } = await buildViewer(user);
+  const [{ context }, guilds] = await Promise.all([buildViewer(user), directory.listGuilds()]);
   const joinedSlugs = new Set(context.guilds);
-  const ranked = rankGuilds(context, directory.listGuilds());
-  const cards = ranked.map((match): GuildCard => ({
-    guild: match.subject,
-    joined: joinedSlugs.has(match.subject.slug),
-    members: [...directory.guildMembers(match.subject.slug)].slice(0, 5),
-    reasons: match.reasons,
-  }));
+  const ranked = rankGuilds(context, guilds);
+  const cards = await Promise.all(
+    ranked.map(
+      async (match): Promise<GuildCard> => ({
+        guild: match.subject,
+        joined: joinedSlugs.has(match.subject.slug),
+        members: (await directory.guildMembers(match.subject.slug)).filter((person) => person.handle !== user.handle).slice(0, 5),
+        reasons: match.reasons,
+      }),
+    ),
+  );
 
   return {
     joined: cards.filter((card) => card.joined),
@@ -300,6 +306,7 @@ export async function getGuilds(user: UserLike): Promise<GuildsView> {
 export type GuildDetail = {
   guild: Guild;
   joined: boolean;
+  /** Visible members other than the viewer. */
   members: SocialPerson[];
   mentors: SocialPerson[];
   challenges: GroupChallengeView[];
@@ -308,20 +315,23 @@ export type GuildDetail = {
 };
 
 export async function getGuildDetail(user: UserLike, slug: string): Promise<GuildDetail | null> {
-  const guild = directory.findGuild(slug);
+  const guild = await directory.findGuild(slug);
   if (!guild) return null;
 
-  const today = todayInTimezone(user.timezone);
-  const [{ context }, entries] = await Promise.all([buildViewer(user), socialRepository.listGroupEntries(user.id)]);
+  const [{ context }, entries, members] = await Promise.all([
+    buildViewer(user),
+    socialRepository.listGroupEntries(user.id),
+    directory.guildMembers(slug),
+  ]);
   const byKey = new Map(entries.map((entry) => [entry.groupKey, entry]));
-  const members = [...directory.guildMembers(slug)];
+  const others = members.filter((person) => person.handle !== user.handle);
 
   return {
     guild,
     joined: context.guilds.includes(slug),
-    members,
-    mentors: members.filter((person) => person.openToMentoring && person.mentorsIn.length > 0),
-    challenges: directory.guildChallenges(slug).map((challenge) => toGroupView(challenge, byKey.get(challenge.key), today)),
+    members: others,
+    mentors: others.filter((person) => person.openToMentoring && person.mentorsIn.length > 0),
+    challenges: await Promise.all(directory.guildChallenges(slug).map((challenge) => toGroupView(user, challenge, byKey.get(challenge.key)))),
     shared: sharedInterests(context.interests, guild.interests),
   };
 }
@@ -330,7 +340,8 @@ export async function getGuildDetail(user: UserLike, slug: string): Promise<Guil
 
 export type CommunityOverview = {
   viewer: ViewerCard;
-  directoryKind: SocialDirectory["kind"];
+  /** How many other members are visible right now. */
+  visibleMembers: number;
   discovery: PersonMatch[];
   guilds: GuildsView;
   groupChallenges: GroupChallengeView[];
@@ -340,22 +351,23 @@ export type CommunityOverview = {
 };
 
 export async function getCommunityOverview(user: UserLike): Promise<CommunityOverview> {
-  const [viewer, stats, guilds, groupChallenges, mentorships] = await Promise.all([
+  const [viewer, stats, guilds, groupChallenges, mentorships, people] = await Promise.all([
     buildViewer(user),
     getViewerStats(user),
     getGuilds(user),
     getGroupChallenges(user),
     getMentorships(user),
+    othersThan(user),
   ]);
 
   return {
     viewer: viewer.card,
-    directoryKind: directory.kind,
-    discovery: discoverPeople(viewer.context, directory.listPeople(), 6),
+    visibleMembers: people.length,
+    discovery: discoverPeople(viewer.context, people, 6),
     guilds,
-    groupChallenges: groupChallenges.filter((view) => view.you.joined).concat(groupChallenges.filter((view) => !view.you.joined)).slice(0, 3),
-    mentorships,
-    chain: mentorshipChains(directory.listPeople())[0] ?? null,
+    groupChallenges: groupChallenges.slice(0, 3),
+    mentorships: mentorships.filter((entry) => entry.status === "ACTIVE" || entry.status === "PENDING"),
+    chain: mentorshipChains(people)[0] ?? null,
     comparison: selfComparison(stats),
   };
 }
@@ -366,35 +378,38 @@ export type PersonView = {
   guilds: Guild[];
   mentoredBy: SocialPerson[];
   mentoring: SocialPerson[];
-  /** The viewer's mentorship with this person, if any. */
+  /** The viewer's open (pending or active) mentorship with this person, if any. */
   mentorship: MentorshipView | null;
   viewer: ViewerCard;
 };
 
+/** Null when there's no such visible member — or when it's the viewer themself. */
 export async function getPerson(user: UserLike, handle: string): Promise<PersonView | null> {
-  const person = directory.findPerson(handle);
+  if (handle === user.handle) return null;
+  const person = await directory.findPerson(handle);
   if (!person) return null;
 
-  const [viewer, mentorships] = await Promise.all([buildViewer(user), getMentorships(user)]);
-  const people = directory.listPeople();
+  const [viewer, mentorships, people, guilds] = await Promise.all([
+    buildViewer(user),
+    getMentorships(user),
+    directory.listPeople(),
+    guildsBySlug(person.guilds),
+  ]);
+  const byHandle = new Map(people.map((entry) => [entry.handle, entry]));
+  const resolve = (handles: string[]) => handles.flatMap((entry) => byHandle.get(entry) ?? []);
 
   return {
     person,
     shared: {
       interests: sharedInterests(viewer.context.interests, person.interests),
-      guilds: person.guilds.filter((slug) => viewer.context.guilds.includes(slug)).flatMap((slug) => {
-        const guild = directory.findGuild(slug);
-        return guild ? [guild] : [];
-      }),
+      guilds: guilds.filter((guild) => viewer.context.guilds.includes(guild.slug)),
       focusAreas: person.focusAreas.filter((area) => viewer.context.focusAreas.includes(area)),
     },
-    guilds: person.guilds.flatMap((slug) => {
-      const guild = directory.findGuild(slug);
-      return guild ? [guild] : [];
-    }),
-    mentoredBy: person.mentoredBy.flatMap((mentor) => people.filter((candidate) => candidate.handle === mentor)),
-    mentoring: person.mentoring.flatMap((mentee) => people.filter((candidate) => candidate.handle === mentee)),
-    mentorship: mentorships.find((entry) => entry.person?.handle === handle && entry.status === "ACTIVE") ?? null,
+    guilds,
+    mentoredBy: resolve(person.mentoredBy),
+    mentoring: resolve(person.mentoring),
+    mentorship:
+      mentorships.find((entry) => entry.counterpart.handle === handle && (entry.status === "ACTIVE" || entry.status === "PENDING")) ?? null,
     viewer: viewer.card,
   };
 }
@@ -403,48 +418,78 @@ export async function getPerson(user: UserLike, handle: string): Promise<PersonV
 
 export type MentorshipView = {
   id: string;
+  /** The viewer's side: MENTEE means the other member is their mentor. */
   role: MentorshipRole;
-  status: string;
+  status: MentorshipStatus;
+  /** Whether the viewer asked, or was asked. */
+  direction: "outgoing" | "incoming";
   topic: string;
   message: string | null;
   startedAt: Date;
+  /** Always named; `person` is only set while they're visible in the community. */
+  counterpart: { handle: string; displayName: string };
   person: SocialPerson | null;
-  /** The agreed shape of the mentorship — seeded, deterministic guidance. */
+  /** How to make it work — the same short guidance for everyone. */
   plan: string[];
 };
 
-export async function getMentorships(user: UserLike): Promise<MentorshipView[]> {
-  const rows = await socialRepository.listMentorships(user.id);
-  return rows.map((row) => ({
+type MentorshipRow = Awaited<ReturnType<typeof socialRepository.listMentorships>>[number];
+
+const flipRole = (role: MentorshipRole): MentorshipRole => (role === "MENTEE" ? "MENTOR" : "MENTEE");
+
+function toMentorshipView(user: UserLike, row: MentorshipRow, byHandle: Map<string, SocialPerson>): MentorshipView {
+  const outgoing = row.userId === user.id;
+  const other = outgoing ? row.counterpart : row.user;
+  const role = outgoing ? row.role : flipRole(row.role);
+  return {
     id: row.id,
-    role: row.role,
+    role,
     status: row.status,
+    direction: outgoing ? "outgoing" : "incoming",
     topic: row.topic,
     message: row.message,
     startedAt: row.startedAt,
-    person: directory.findPerson(row.counterpartHandle) ?? null,
-    plan: startingPlan(row.topic, row.role),
-  }));
+    counterpart: other ? { handle: other.handle, displayName: other.displayName } : { handle: row.counterpartHandle, displayName: "A former member" },
+    person: other ? (byHandle.get(other.handle) ?? null) : null,
+    plan: startingPlan(row.topic, role),
+  };
+}
+
+const STATUS_ORDER: Record<MentorshipStatus, number> = { PENDING: 0, ACTIVE: 1, DECLINED: 2, ENDED: 3 };
+
+export async function getMentorships(user: UserLike): Promise<MentorshipView[]> {
+  const [rows, people] = await Promise.all([socialRepository.listMentorships(user.id), directory.listPeople()]);
+  const byHandle = new Map(people.map((person) => [person.handle, person]));
+  return rows
+    .map((row) => toMentorshipView(user, row, byHandle))
+    .sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status] || b.startedAt.getTime() - a.startedAt.getTime());
 }
 
 export type MentorshipHub = {
   viewer: ViewerCard;
-  directoryKind: SocialDirectory["kind"];
-  mentorships: MentorshipView[];
+  /** Requests other members sent the viewer, waiting on an answer. */
+  incoming: MentorshipView[];
+  /** The viewer's own requests, waiting on the other member. */
+  outgoing: MentorshipView[];
+  active: MentorshipView[];
+  past: MentorshipView[];
   mentors: MentorMatch[];
   mentees: MenteeMatch[];
   chains: MentorshipChain[];
 };
 
 export async function getMentorshipHub(user: UserLike): Promise<MentorshipHub> {
-  const [viewer, mentorships] = await Promise.all([buildViewer(user), getMentorships(user)]);
-  const people = directory.listPeople();
-  const engaged = new Set(mentorships.filter((entry) => entry.status === "ACTIVE").map((entry) => entry.person?.handle));
+  const [viewer, mentorships, people] = await Promise.all([buildViewer(user), getMentorships(user), othersThan(user)]);
+  const engaged = new Set(
+    mentorships.filter((entry) => entry.status === "ACTIVE" || entry.status === "PENDING").map((entry) => entry.counterpart.handle),
+  );
 
   return {
     viewer: viewer.card,
-    directoryKind: directory.kind,
-    mentorships,
+    incoming: mentorships.filter((entry) => entry.status === "PENDING" && entry.direction === "incoming"),
+    outgoing: mentorships.filter((entry) => entry.status === "PENDING" && entry.direction === "outgoing"),
+    active: mentorships.filter((entry) => entry.status === "ACTIVE"),
+    past: mentorships.filter((entry) => entry.status === "ENDED" || entry.status === "DECLINED"),
     mentors: findMentors(viewer.context, people, viewer.card.mentorTier)
       .filter((match) => !engaged.has(match.person.handle))
       .slice(0, 4),
@@ -455,11 +500,31 @@ export async function getMentorshipHub(user: UserLike): Promise<MentorshipHub> {
   };
 }
 
+export type MentorshipThread = {
+  mentorship: MentorshipView;
+  messages: { id: string; body: string; createdAt: Date; mine: boolean }[];
+  /** Notes can be sent only while the mentorship is active. */
+  canWrite: boolean;
+};
+
+/** Only the two members of an accepted mentorship can read its notes. */
+export async function getMentorshipThread(user: UserLike, mentorshipId: string): Promise<MentorshipThread | null> {
+  const row = await socialRepository.findMentorshipForMember(user.id, mentorshipId);
+  if (!row || row.status === "PENDING" || row.status === "DECLINED") return null;
+
+  const [messages, people] = await Promise.all([socialRepository.listMessages(row.id), directory.listPeople()]);
+  const byHandle = new Map(people.map((person) => [person.handle, person]));
+  return {
+    mentorship: toMentorshipView(user, row, byHandle),
+    messages: messages.map((message) => ({ id: message.id, body: message.body, createdAt: message.createdAt, mine: message.authorId === user.id })),
+    canWrite: row.status === "ACTIVE" && row.counterpartId !== null,
+  };
+}
+
 // ─── Leaderboards ────────────────────────────────────────────────────────────
 
 export type LeaderboardsView = {
   comparison: SelfComparison[];
-  directoryKind: SocialDirectory["kind"];
   onLeaderboards: boolean;
   metric: LeaderboardMetric | null;
   rows: ReturnType<typeof buildBoard>;
@@ -474,23 +539,16 @@ export async function getLeaderboards(
   guildSlug: string | null,
 ): Promise<LeaderboardsView> {
   const [viewer, stats] = await Promise.all([buildViewer(user), getViewerStats(user)]);
-  const guild = guildSlug ? (directory.findGuild(guildSlug) ?? null) : null;
+  const guild = guildSlug ? ((await directory.findGuild(guildSlug)) ?? null) : null;
 
-  const people = guild ? directory.guildMembers(guild.slug) : directory.listPeople();
-  const subjects: BoardSubject[] = people.map((person) => ({
-    handle: person.handle,
-    name: person.displayName,
-    isViewer: false,
-    xpRecent: person.xpRecent,
-    xpPrevious: person.xpPrevious,
-    challengesCompleted: person.challengesCompleted,
-    achievements: person.achievements,
-  }));
+  const subjects: BoardSubject[] = metric
+    ? (await directory.leaderboardSubjects(guild?.slug ?? null)).filter((subject) => subject.handle !== user.handle)
+    : [];
 
   // The viewer is listed only if they asked to be, and only where they belong.
-  if (viewer.card.settings.onLeaderboards && (!guild || viewer.card.guilds.includes(guild.slug))) {
+  if (metric && viewer.card.settings.onLeaderboards && (!guild || viewer.card.guilds.includes(guild.slug))) {
     subjects.push({
-      handle: "you",
+      handle: user.handle,
       name: viewer.card.name,
       isViewer: true,
       xpRecent: stats.xpRecent,
@@ -502,15 +560,11 @@ export async function getLeaderboards(
 
   return {
     comparison: selfComparison(stats),
-    directoryKind: directory.kind,
     onLeaderboards: viewer.card.settings.onLeaderboards,
     metric,
     rows: metric ? buildBoard(subjects, metric) : [],
     guild,
-    guilds: viewer.card.guilds.flatMap((slug) => {
-      const found = directory.findGuild(slug);
-      return found ? [found] : [];
-    }),
+    guilds: await guildsBySlug(viewer.card.guilds),
   };
 }
 
@@ -520,14 +574,7 @@ export type SocialProfileView = { viewer: ViewerCard; stats: ViewerStats; guilds
 
 export async function getSocialProfile(user: UserLike): Promise<SocialProfileView> {
   const [viewer, stats] = await Promise.all([buildViewer(user), getViewerStats(user)]);
-  return {
-    viewer: viewer.card,
-    stats,
-    guilds: viewer.card.guilds.flatMap((slug) => {
-      const guild = directory.findGuild(slug);
-      return guild ? [guild] : [];
-    }),
-  };
+  return { viewer: viewer.card, stats, guilds: await guildsBySlug(viewer.card.guilds) };
 }
 
 export async function saveSocialProfile(user: UserLike, input: SocialProfileInput) {
@@ -537,7 +584,7 @@ export async function saveSocialProfile(user: UserLike, input: SocialProfileInpu
 // ─── Actions on the user's side ──────────────────────────────────────────────
 
 export async function joinGuild(user: UserLike, slug: string) {
-  if (!directory.findGuild(slug)) throw new SocialError("That guild doesn't exist");
+  if (!(await directory.findGuild(slug))) throw new SocialError("That guild doesn't exist");
   await socialRepository.joinGuild(user.id, slug);
 }
 
@@ -553,7 +600,11 @@ export async function leaveGuild(user: UserLike, slug: string) {
 export async function joinGroupChallenge(user: UserLike, groupKey: string) {
   const group = directory.findGroupChallenge(groupKey);
   if (!group) throw new SocialError("That group challenge doesn't exist");
-  if (await socialRepository.findGroupEntry(user.id, groupKey)) throw new SocialError("You're already in this one");
+
+  const previous = await socialRepository.findGroupEntry(user.id, groupKey);
+  if (previous?.challenge?.status === "ACTIVE") throw new SocialError("You're already in this one");
+  // A finished or closed run makes room for another go.
+  if (previous) await socialRepository.deleteGroupEntry(user.id, groupKey);
 
   const overview = await challenges.getChallengesOverview(user);
   const existing = overview.active.find((challenge) => challenge.templateKey === group.templateKey);
@@ -577,33 +628,77 @@ export async function leaveGroupChallenge(user: UserLike, groupKey: string) {
   await socialRepository.deleteGroupEntry(user.id, groupKey);
 }
 
+/** Open requests a member can have waiting at once — enough to ask around, not to spam. */
+export const MAX_PENDING_REQUESTS = 5;
+
+/**
+ * Asks a visible member to mentor the user (role MENTEE), or offers to mentor
+ * them (role MENTOR). It stays PENDING until they answer.
+ */
 export async function requestMentorship(user: UserLike, input: MentorshipRequestInput) {
-  const person = directory.findPerson(input.handle);
-  if (!person) throw new SocialError("That person isn't in the community");
-  if (input.role === "MENTEE" && !person.openToMentoring) throw new SocialError(`${person.displayName} isn't taking on anyone right now`);
+  if (input.handle === user.handle) throw new SocialError("You can't mentor yourself");
+  const person = await directory.findPerson(input.handle);
+  const target = person ? await userRepository.findByHandle(person.handle) : null;
+  if (!person || !target) throw new SocialError("That person isn't in the community");
+
+  if (input.role === "MENTEE" && (!person.openToMentoring || person.mentorsIn.length === 0)) {
+    throw new SocialError(`${person.displayName} isn't taking on anyone right now`);
+  }
   if (input.role === "MENTOR" && person.seekingMentorIn.length === 0) {
     throw new SocialError(`${person.displayName} isn't looking for a mentor right now`);
   }
-
-  const existing = await socialRepository.listMentorships(user.id);
-  if (existing.some((row) => row.counterpartHandle === person.handle && row.status === "ACTIVE")) {
-    throw new SocialError(`You already have a mentorship with ${person.displayName}`);
+  if (await socialRepository.findOpenBetween(user.id, target.id)) {
+    throw new SocialError(`You already have a mentorship or a request open with ${person.displayName}`);
+  }
+  if ((await socialRepository.countPendingRequests(user.id)) >= MAX_PENDING_REQUESTS) {
+    throw new SocialError(`You have ${MAX_PENDING_REQUESTS} requests waiting already — withdraw one, or wait for answers`);
   }
 
-  await socialRepository.createMentorship({
+  await socialRepository.requestMentorship({
     userId: user.id,
     role: input.role,
-    counterpartHandle: person.handle,
+    counterpartId: target.id,
+    counterpartHandle: target.handle,
     topic: input.topic,
     message: input.message,
   });
 }
 
+/** The asked member accepts or declines. Only they can. */
+export async function respondToMentorship(user: UserLike, mentorshipId: string, accept: boolean) {
+  const row = await socialRepository.findMentorshipForMember(user.id, mentorshipId);
+  if (!row || row.counterpartId !== user.id) throw new SocialError("That request doesn't exist");
+  if (row.status !== "PENDING") throw new SocialError("That request was already answered");
+  await socialRepository.setMentorshipStatus(row.id, accept ? "ACTIVE" : "DECLINED");
+}
+
+/** Either member can close a mentorship; a pending request can be withdrawn or declined. */
 export async function endMentorship(user: UserLike, mentorshipId: string) {
-  const mentorship = await socialRepository.findMentorship(user.id, mentorshipId);
-  if (!mentorship) throw new SocialError("That mentorship doesn't exist");
-  if (mentorship.status === "ENDED") return;
-  await socialRepository.endMentorship(mentorshipId);
+  const row = await socialRepository.findMentorshipForMember(user.id, mentorshipId);
+  if (!row) throw new SocialError("That mentorship doesn't exist");
+  if (row.status === "ENDED" || row.status === "DECLINED") return;
+  if (row.status === "PENDING" && row.counterpartId === user.id) {
+    await socialRepository.setMentorshipStatus(row.id, "DECLINED");
+    return;
+  }
+  await socialRepository.setMentorshipStatus(row.id, "ENDED");
+}
+
+/** A steady pace for notes; this isn't a chat room. */
+export const MESSAGES_PER_HOUR = 30;
+
+export async function sendMentorshipMessage(user: UserLike, mentorshipId: string, body: string) {
+  const text = body.trim();
+  if (text.length === 0) throw new SocialError("Write something first");
+  if (text.length > MAX_MENTORSHIP_NOTE) throw new SocialError(`Keep it under ${MAX_MENTORSHIP_NOTE} characters`);
+
+  const row = await socialRepository.findMentorshipForMember(user.id, mentorshipId);
+  if (!row || row.counterpartId === null) throw new SocialError("That mentorship doesn't exist");
+  if (row.status !== "ACTIVE") throw new SocialError("This mentorship is closed");
+  if ((await socialRepository.countMessagesSince(user.id, new Date(Date.now() - 3_600_000))) >= MESSAGES_PER_HOUR) {
+    throw new SocialError("That's a lot of notes for one hour — take a breath and try again later");
+  }
+  await socialRepository.createMessage(row.id, user.id, text);
 }
 
 /** Convenience for pages: the current user plus everything the hub needs. */

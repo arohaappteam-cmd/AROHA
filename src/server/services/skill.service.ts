@@ -10,9 +10,11 @@ import {
   flattenTree,
   frontierSkill,
   resolveAwardTarget,
+  skillPath,
   summarizeTree,
   unlockedBetween,
   type SkillNode,
+  type SkillPathStep,
   type SkillRequirement,
   type SkillTreeSummary,
 } from "@/modules/skills/state";
@@ -65,6 +67,8 @@ export type SkillTreeCard = {
   awaitingProof: { slug: string; name: string }[];
   /** The nearest gated skill — what working this tree opens next. */
   nextUnlock: { name: string; requirement: SkillRequirement } | null;
+  /** Started skills → where practice lands now → the nearest locked one. */
+  path: SkillPathStep[];
 };
 
 export type SkillsOverview = {
@@ -142,6 +146,7 @@ export async function getSkillsOverview(userId: string): Promise<SkillsOverview>
           }
         : null,
       nextUnlock: nextLocked ? { name: nextLocked.name, requirement: nextLocked.requirement! } : null,
+      path: skillPath(nodes),
       awaitingProof: flat.filter((node) => node.awaitingProof).map((node) => ({ slug: node.slug, name: node.name })),
     };
   });

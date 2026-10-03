@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 
 import { validationFailure, type ActionResult, type ActionResultWith } from "@/lib/action-result";
 import {
@@ -21,6 +21,7 @@ async function run(task: (userId: string) => Promise<unknown>, message?: string)
     const user = await getCurrentUser();
     await task(user.id);
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof projects.ProjectError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };
@@ -80,6 +81,7 @@ export async function transitionProjectAction(input: unknown): Promise<ActionRes
     }
     return { ok: true, message, data: outcome };
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof projects.ProjectError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };

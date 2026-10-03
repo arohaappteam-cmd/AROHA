@@ -17,8 +17,8 @@ export default function GlobalError({
           display: "grid",
           placeItems: "center",
           fontFamily: "system-ui, sans-serif",
-          background: "#16141d",
-          color: "#f4f3f7",
+          background: "#1a1a1a",
+          color: "#f5f5f5",
         }}
       >
         <title>Something went wrong · AROHA</title>
@@ -34,7 +34,7 @@ export default function GlobalError({
               marginTop: 12,
               padding: "8px 14px",
               borderRadius: 8,
-              border: "1px solid #3a3645",
+              border: "1px solid #3a3a3a",
               background: "transparent",
               color: "inherit",
               cursor: "pointer",

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { validationFailure, type ActionResult } from "@/lib/action-result";
@@ -17,6 +17,7 @@ async function run(task: () => Promise<unknown>, message: string): Promise<Actio
   try {
     await task();
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof experiments.ExperimentError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };
@@ -63,6 +64,7 @@ export async function reviewExperimentAction(input: unknown): Promise<ActionResu
     const user = await getCurrentUser();
     outcome = await experiments.reviewExperiment(user, parsed.data);
   } catch (error) {
+    unstable_rethrow(error);
     if (error instanceof experiments.ExperimentError) return { ok: false, error: error.message };
     console.error(error);
     return { ok: false, error: "Something went wrong. Please try again." };

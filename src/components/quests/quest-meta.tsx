@@ -82,7 +82,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={circumference * (1 - fraction)}
-          className="stroke-primary transition-[stroke-dashoffset] duration-700"
+          className="stroke-success transition-[stroke-dashoffset] duration-700"
         />
       </svg>
       <div className="absolute inset-0 grid place-items-center text-center" role="img" aria-label={label}>

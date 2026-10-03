@@ -25,7 +25,7 @@ type UserLike = Pick<User, "id" | "timezone">;
 
 const achievementEmoji = new Map(ACHIEVEMENTS.map((achievement) => [achievement.slug, achievement.emoji]));
 
-async function collectEvents(userId: string): Promise<TimelineEvent[]> {
+export async function collectEvents(userId: string): Promise<TimelineEvent[]> {
   const [goals, projects, achievements, challenges, skillRows, skills, abilityPasses, experiences, experiments, xpRows] = await Promise.all([
     db.goal.findMany({ where: { userId }, select: { id: true, title: true, createdAt: true, completedAt: true, status: true } }),
     db.project.findMany({
@@ -88,7 +88,7 @@ async function collectEvents(userId: string): Promise<TimelineEvent[]> {
       title: entry.achievement.name,
       detail: entry.achievement.description,
       emoji: achievementEmoji.get(entry.achievement.slug) ?? "🏆",
-      href: "/journey",
+      href: "/journey#achievements",
       major: false,
     });
   }
@@ -102,7 +102,7 @@ async function collectEvents(userId: string): Promise<TimelineEvent[]> {
       title: `Completed ${challenge.title}`,
       detail: `${challenge.durationDays}-day challenge`,
       emoji: challenge.emoji,
-      href: "/journey",
+      href: "/journey/challenges",
       major: challenge.durationDays >= 14,
     });
   }

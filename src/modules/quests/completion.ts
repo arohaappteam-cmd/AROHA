@@ -1,3 +1,4 @@
+import type { LifeArea } from "@/generated/prisma/enums";
 import type { UnlockedAchievement } from "@/modules/achievements/catalogue";
 import type { ChallengeQuestOutcome } from "@/modules/challenges/outcome";
 import type { ProgressionOutcome } from "@/modules/progression/outcome";
@@ -15,4 +16,8 @@ export type QuestCompletionPayload = {
   experiment: { experimentTitle: string; daysPracticed: number } | null;
   /** Achievements this completion newly unlocked. */
   achievements: UnlockedAchievement[];
+  /** The quest's own day, area by area, after this completion. */
+  day: { lifeArea: LifeArea; completed: number; offered: number }[];
+  /** The completed quest's area, so the result can light it up. */
+  lifeArea: LifeArea;
 };

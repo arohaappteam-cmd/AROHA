@@ -5,7 +5,7 @@ import { connection } from "next/server";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs, PrivateProfileNotice } from "@/components/social/community-chrome";
 import { GroupChallengeCard } from "@/components/social/group-challenge-card";
 import { GuildCard } from "@/components/social/guild-cards";
 import { MentorshipChainCard, MentorshipList } from "@/components/social/mentorship-views";
@@ -36,7 +36,7 @@ export default async function CommunityPage() {
         }
       />
       <CommunityTabs active="/community" />
-      <DemoNotice kind={overview.directoryKind} />
+      <PrivateProfileNotice visibility={viewer.settings.visibility} />
 
       <SelfComparisonCard comparison={overview.comparison} compact />
 
@@ -55,6 +55,18 @@ export default async function CommunityPage() {
             </Link>{" "}
             and this becomes about you.
           </p>
+        )}
+        {overview.discovery.length === 0 && (
+          <EmptyState
+            icon={UsersIcon}
+            title="Nobody else is visible yet"
+            description="People appear here once they make their community profile visible. Make yours visible so others can find you too."
+            action={
+              <Link href="/community/profile" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                Your sharing
+              </Link>
+            }
+          />
         )}
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {overview.discovery.map((match) => (

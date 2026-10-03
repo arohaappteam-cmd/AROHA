@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
 import { validationFailure, type ActionResult } from "@/lib/action-result";
@@ -28,6 +28,7 @@ export async function saveDailyReflectionAction(input: unknown): Promise<ActionR
     const user = await getCurrentUser();
     await reflections.saveReflection(user, parsed.data);
   } catch (error) {
+    unstable_rethrow(error);
     return failure(error);
   }
   // Reflections show on Home, the journal, and shape tomorrow's quests.
@@ -43,6 +44,7 @@ export async function createJournalEntryAction(input: unknown): Promise<ActionRe
     const user = await getCurrentUser();
     entryId = (await journal.createEntry(user, parsed.data)).id;
   } catch (error) {
+    unstable_rethrow(error);
     return failure(error);
   }
   revalidatePath("/journal");
@@ -58,6 +60,7 @@ export async function updateJournalEntryAction(entryId: unknown, input: unknown)
     const user = await getCurrentUser();
     await journal.updateEntry(user, id.data, parsed.data);
   } catch (error) {
+    unstable_rethrow(error);
     return failure(error);
   }
   revalidatePath("/journal");
@@ -71,6 +74,7 @@ export async function deleteJournalEntryAction(entryId: unknown): Promise<Action
     const user = await getCurrentUser();
     await journal.deleteEntry(user, id.data);
   } catch (error) {
+    unstable_rethrow(error);
     return failure(error);
   }
   revalidatePath("/journal");

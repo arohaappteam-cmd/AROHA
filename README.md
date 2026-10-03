@@ -3,7 +3,9 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: Phase 11 — the community layer (a demonstration, not a network).**
+**Current state: real accounts (Supabase Auth) and a live community. The AI Mentor page is "coming soon".**
+
+Deploying: see [DEPLOYMENT.md](DEPLOYMENT.md) (Supabase + Render).
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -18,13 +20,15 @@ lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specific
 | 8 | Projects with evidence, assessments (quiz / practical / project review, AI-assisted), proof of skill, Skill Passport | Done |
 | 9 | Private journal, end-of-day reflection with AI summary, life timeline, Experiment Mode | Done |
 | 10 | Personal analytics: trends, life-area balance, goal momentum, skill progression, patterns with evidence, AI insights & recommendations | Done |
-| 11 | Community (demo): social profiles, discovery, guilds, group challenges, opt-in leaderboards, mentorship — seeded people behind a swappable directory | Done |
-| — | Weekly review, real multi-user accounts | Not started |
+| 11 | Community: social profiles, discovery, guilds, group challenges, opt-in leaderboards, mentorship | Done |
+| 12 | Accounts: Supabase Auth sign-up/sign-in/reset; live community of real members; two-sided mentorship requests with private notes | Done |
+| 13 | Progression map (`/journey`): level & tier path, weekly rings, XP chart with ranges, quest activity matrix, consistency heatmap, life areas & energy map, goal milestone paths, skill paths, weekly/monthly/yearly reviews, achievement rarity & progress, quest result card | Done |
+| — | AI Mentor launch | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
 `/goals/[goalId]`, `/goals/[goalId]/edit`, `/skills`, `/skills/[treeSlug]`,
-`/journey` (challenges, streaks, achievements), `/projects`, `/projects/new`,
+`/journey` (progression map, `?range=7d|30d|90d|6m|1y|all&year=`), `/journey/challenges` (challenges & streaks), `/projects`, `/projects/new`,
 `/projects/[projectId]`, `/projects/[projectId]/edit`, `/assessments`,
 `/assessments/[assessmentKey]`, `/assessments/attempts/[attemptId]`, `/passport`,
 `/journal`, `/journal/reflect` (`?date=`), `/journal/new`, `/journal/[entryId]`,
@@ -32,10 +36,15 @@ Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/discover/[experimentId]`, `/insights` (`?range=4w|12w|26w`),
 `/community`, `/community/guilds`, `/community/guilds/[slug]`,
 `/community/challenges`, `/community/leaderboards` (`?board=&guild=`),
-`/community/mentorship`, `/community/people/[handle]`, `/community/profile`,
+`/community/mentorship`, `/community/mentorship/[mentorshipId]`, `/community/people/[handle]`,
+`/community/profile`, `/login`, `/auth/confirm`, `/reset-password`,
 `/mentor`, `/api/health`.
 
 ## AI Mentor
+
+**Coming soon.** The `/mentor` page and its nav entry say so; nothing links to
+it. The AI service layer below still powers optional AI in quests, roadmaps,
+reflections and insights when configured.
 
 Off by default. To turn it on, set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`
 in `.env` (optionally `AI_MODEL`, default `claude-opus-5`). With no key the app
@@ -82,7 +91,18 @@ npm run dev                 # http://localhost:3000
 | `npm run test:integration` | Service tests against the database in `.env` (uses throwaway users) |
 | `npm run db:*`      | `generate`, `migrate`, `deploy`, `seed`, `studio` |
 
-Health check: `GET /api/health` → database connectivity + AI provider.
+Health check: `GET /api/health` → `{ status, database: { ok, latencyMs } }`. Public, so it never includes error details (those go to the server log).
+
+**Accounts.** People delete their own account (all data, then their sign-in)
+from Character → Customize → Account; that needs `SUPABASE_SECRET_KEY` on the
+server. **Errors** are logged as JSON lines by `src/instrumentation.ts`
+(optionally posted to `ERROR_WEBHOOK_URL`).
+
+**Sign-in.** With `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` unset (the default for development),
+there's no sign-in: everyone is one local user. Set both to use Supabase Auth
+locally (add `http://localhost:3000/auth/confirm` to the project's Redirect
+URLs). Production refuses to start without them unless `AUTH_MODE=local`.
 
 ## Architecture
 
@@ -142,13 +162,14 @@ src/
     analytics/            personal analytics: dataset & windows, overview
                           (trends, balance, goal momentum, skill gains),
                           pattern detection, AI insight contract + grounding
-    social/               community demo: seeded people, guilds & group
-                          challenges, the SocialDirectory port, shared-ground
+    social/               community: guild & group-challenge catalogue, the
+                          SocialDirectory port, shared-ground
                           matching, leaderboards, mentorship chains
   server/                 server-only code
     db/                   Prisma client (singleton + factory), catalogue sync
     progression/          XP engine + the port quests report completions to
-    auth/                 current-user resolver (single local user for now)
+    auth/                 current-user resolver: Supabase Auth, or the
+                          single local user when auth is off
     repositories/         data access, one per aggregate
     services/             use cases composed from repositories + modules
     actions/              Server Actions — validate input, call services
@@ -307,15 +328,18 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
   report is shown. The model input never includes the journal or raw notes and
   doesn't depend on the charted range, so results are cached in memory per
   user until the patterns change. The report streams in behind the charts.
-- **The community layer is a demonstration, and says so.** There is no second
-  account, no messaging and no feed. Every other person comes from
-  `SocialDirectory` (`modules/social/directory.ts`), whose only implementation
-  today serves seeded sample people; each page states plainly that they are
-  sample data. Making it real means adding a live directory — no page, service
-  or table above that port changes.
-- **The user's side of the community is real.** `SocialProfile`,
-  `GuildMembership`, `GroupChallengeEntry` and `Mentorship` hold only this
-  user's own choices. Joining a group challenge starts an ordinary personal
+- **The community is real members who chose to be seen.** Every other person
+  comes from `SocialDirectory` (`modules/social/directory.ts`), implemented by
+  `server/services/community-directory.ts`. It returns only members whose
+  profile is COMMUNITY, carrying only what they share — a hidden level,
+  record or skill list is `null`/empty, never zero. It loads once per request
+  in a fixed number of batched queries. Private members are counted (guild
+  sizes, "N others running this") but never named. There is no feed.
+- **Mentorship is two-sided.** A request is PENDING until the other member
+  accepts or declines; only then can the two leave each other notes (private
+  to them, rate-limited, closed when either ends it). Emails are never shown.
+- **Group challenges run on each person's own window.** `GroupChallengeEntry`
+  links a member to an ordinary personal challenge. Joining a group challenge starts an ordinary personal
   challenge from the usual template, so its days are earned by real quests and
   the two-at-a-time limit still applies; leaving the group leaves the
   challenge running.

@@ -1,0 +1,27 @@
+# Render Blueprint for AROHA — see DEPLOYMENT.md.
+# Render → New → Blueprint → pick this repo. Values marked `sync: false`
+# are asked for once in the Render dashboard and never stored in git.
+services:
+  - type: web
+    name: aroha
+    runtime: node
+    plan: free
+    # Keep this close to your Supabase region (Singapore ↔ ap-southeast-1).
+    region: singapore
+    # Dev dependencies (Prisma CLI, TypeScript, Tailwind) are needed to build.
+    buildCommand: npm ci --include=dev && npm run db:deploy && npm run db:seed && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      # Server-only. Lets people delete their account (removes their sign-in).
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      # The AI Mentor is "coming soon"; everything else runs without it.
+      - key: AI_PROVIDER
+        value: mock

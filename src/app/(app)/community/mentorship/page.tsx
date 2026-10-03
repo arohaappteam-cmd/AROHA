@@ -5,7 +5,7 @@ import { connection } from "next/server";
 
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
-import { CommunityTabs, DemoNotice } from "@/components/social/community-chrome";
+import { CommunityTabs, PrivateProfileNotice } from "@/components/social/community-chrome";
 import { MentorshipRequestToggle } from "@/components/social/mentorship";
 import { MentorshipChainCard, MentorshipList } from "@/components/social/mentorship-views";
 import { PersonCard } from "@/components/social/person-card";
@@ -31,7 +31,7 @@ export default async function MentorshipPage() {
         description="Someone a few steps ahead of you, and someone a few steps behind. Both halves are useful, and most people are in the middle."
       />
       <CommunityTabs active="/community/mentorship" />
-      <DemoNotice kind={hub.directoryKind} />
+      <PrivateProfileNotice visibility={viewer.settings.visibility} />
 
       <MentorshipChainCard chains={hub.chains} />
 
@@ -48,6 +48,15 @@ export default async function MentorshipPage() {
           {viewer.canMentorIn.length > 0 ? (
             <p className="text-sm text-muted-foreground">
               You could mentor someone in {viewer.canMentorIn.join(", ")} — you&apos;ve taken those past level 3.
+              {!(viewer.settings.visibility === "COMMUNITY" && viewer.settings.openToMentoring) && (
+                <>
+                  {" "}
+                  Make your profile visible and turn on &ldquo;open to mentoring&rdquo; so people can ask you.{" "}
+                  <Link href="/community/profile" className="underline underline-offset-4">
+                    Your sharing
+                  </Link>
+                </>
+              )}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -60,12 +69,30 @@ export default async function MentorshipPage() {
         </CardContent>
       </Card>
 
-      {hub.mentorships.length > 0 && (
-        <section aria-labelledby="yours-title" className="space-y-3">
-          <h2 id="yours-title" className="text-lg font-semibold">
+      {hub.incoming.length > 0 && (
+        <section aria-labelledby="incoming-title" className="space-y-3">
+          <h2 id="incoming-title" className="text-lg font-semibold">
+            Waiting on your answer
+          </h2>
+          <MentorshipList mentorships={hub.incoming} />
+        </section>
+      )}
+
+      {hub.active.length > 0 && (
+        <section aria-labelledby="active-title" className="space-y-3">
+          <h2 id="active-title" className="text-lg font-semibold">
             Your mentorships
           </h2>
-          <MentorshipList mentorships={hub.mentorships} />
+          <MentorshipList mentorships={hub.active} />
+        </section>
+      )}
+
+      {hub.outgoing.length > 0 && (
+        <section aria-labelledby="outgoing-title" className="space-y-3">
+          <h2 id="outgoing-title" className="text-lg font-semibold">
+            Requests you&apos;ve sent
+          </h2>
+          <MentorshipList mentorships={hub.outgoing} />
         </section>
       )}
 
@@ -80,7 +107,7 @@ export default async function MentorshipPage() {
           <EmptyState
             icon={GraduationCapIcon}
             title="No matches yet"
-            description="Mentor matching uses your interests and the skills you're building. Add interests or complete a few more quests and suggestions will appear."
+            description="Mentors are members who made their profile visible, said they're open to mentoring, and have taken a skill past level 3. Matches use your interests and the skills you're building — check back as the community grows."
           />
         ) : (
           <ul className="grid gap-4 md:grid-cols-2">
@@ -127,6 +154,14 @@ export default async function MentorshipPage() {
             ))}
           </ul>
         </section>
+      )}
+      {hub.past.length > 0 && (
+        <details className="rounded-xl border p-4">
+          <summary className="cursor-pointer text-sm font-medium">Past mentorships and requests ({hub.past.length})</summary>
+          <div className="mt-3">
+            <MentorshipList mentorships={hub.past} />
+          </div>
+        </details>
       )}
     </div>
   );

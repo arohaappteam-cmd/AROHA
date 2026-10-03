@@ -40,6 +40,14 @@ export const EMPTY_FACTS: AchievementFacts = {
   reflectionDays: 0,
 };
 
+/**
+ * How hard an achievement is to earn — a fixed property of the achievement,
+ * set by design here, never computed from how many people hold it.
+ */
+export type AchievementRarity = "common" | "rare" | "epic" | "legendary";
+
+export const RARITY_ORDER: readonly AchievementRarity[] = ["common", "rare", "epic", "legendary"];
+
 export type AchievementSpec = {
   slug: string;
   name: string;
@@ -48,8 +56,13 @@ export type AchievementSpec = {
   /** How to earn it — shown while still locked. */
   hint: string;
   xpReward: number;
+  rarity: AchievementRarity;
   earned: (facts: AchievementFacts) => boolean;
+  /** How far along a count-based achievement is, from the same facts the rule reads. */
+  progress?: (facts: AchievementFacts) => { current: number; target: number };
 };
+
+const count = (current: number, target: number) => ({ current: Math.min(current, target), target });
 
 export const ACHIEVEMENTS: readonly AchievementSpec[] = [
   {
@@ -59,7 +72,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🌅",
     hint: "Complete any quest.",
     xpReward: 25,
+    rarity: "common",
     earned: (facts) => facts.questsCompleted >= 1,
+    progress: (facts) => count(facts.questsCompleted, 1),
   },
   {
     slug: "quests-25",
@@ -68,7 +83,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "📜",
     hint: "Complete 25 quests.",
     xpReward: 50,
+    rarity: "common",
     earned: (facts) => facts.questsCompleted >= 25,
+    progress: (facts) => count(facts.questsCompleted, 25),
   },
   {
     slug: "quests-100",
@@ -77,7 +94,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🏛️",
     hint: "Complete 100 quests.",
     xpReward: 150,
+    rarity: "rare",
     earned: (facts) => facts.questsCompleted >= 100,
+    progress: (facts) => count(facts.questsCompleted, 100),
   },
   {
     slug: "first-project",
@@ -86,7 +105,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🛠️",
     hint: "Complete a project with evidence attached.",
     xpReward: 50,
+    rarity: "rare",
     earned: (facts) => facts.projectsCompleted >= 1,
+    progress: (facts) => count(facts.projectsCompleted, 1),
   },
   {
     slug: "builder",
@@ -95,7 +116,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🏗️",
     hint: "Complete 3 projects.",
     xpReward: 100,
+    rarity: "epic",
     earned: (facts) => facts.projectsCompleted >= 3,
+    progress: (facts) => count(facts.projectsCompleted, 3),
   },
   {
     slug: "proof-over-claims",
@@ -104,6 +127,7 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🔎",
     hint: "Pass a practical task or project assessment.",
     xpReward: 50,
+    rarity: "rare",
     earned: (facts) => facts.abilityDemonstrated,
   },
   {
@@ -113,7 +137,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🧪",
     hint: "Finish an experiment and answer its review.",
     xpReward: 50,
+    rarity: "common",
     earned: (facts) => facts.experimentsReviewed >= 1,
+    progress: (facts) => count(facts.experimentsReviewed, 1),
   },
   {
     slug: "reflective-week",
@@ -122,7 +148,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🪞",
     hint: "Write an end-of-day reflection on 7 different days.",
     xpReward: 50,
+    rarity: "common",
     earned: (facts) => facts.reflectionDays >= 7,
+    progress: (facts) => count(facts.reflectionDays, 7),
   },
   {
     slug: "first-book",
@@ -131,7 +159,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "📚",
     hint: "Complete 10 reading quests.",
     xpReward: 50,
+    rarity: "rare",
     earned: (facts) => facts.readingQuestsCompleted >= 10,
+    progress: (facts) => count(facts.readingQuestsCompleted, 10),
   },
   {
     slug: "challenge-7",
@@ -140,7 +170,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🔥",
     hint: "Complete any challenge of 7 days or longer.",
     xpReward: 50,
+    rarity: "common",
     earned: (facts) => facts.longestChallengeCompleted >= 7,
+    progress: (facts) => count(facts.longestChallengeCompleted, 7),
   },
   {
     slug: "challenge-30",
@@ -149,7 +181,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🌋",
     hint: "Complete a 30-day challenge.",
     xpReward: 150,
+    rarity: "epic",
     earned: (facts) => facts.longestChallengeCompleted >= 30,
+    progress: (facts) => count(facts.longestChallengeCompleted, 30),
   },
   {
     slug: "first-major-goal",
@@ -158,7 +192,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "🏔️",
     hint: "Complete a goal.",
     xpReward: 100,
+    rarity: "epic",
     earned: (facts) => facts.goalsCompleted >= 1,
+    progress: (facts) => count(facts.goalsCompleted, 1),
   },
   {
     slug: "skill-milestone",
@@ -167,7 +203,9 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "⚡",
     hint: "Raise any skill to level 3.",
     xpReward: 50,
+    rarity: "rare",
     earned: (facts) => facts.maxSkillLevel >= 3,
+    progress: (facts) => count(facts.maxSkillLevel, 3),
   },
   {
     slug: "skill-mastery",
@@ -176,6 +214,7 @@ export const ACHIEVEMENTS: readonly AchievementSpec[] = [
     emoji: "👑",
     hint: "Reach a skill's top level and pass a practical or project assessment in it.",
     xpReward: 150,
+    rarity: "legendary",
     earned: (facts) => facts.hasMasteredSkill,
   },
 ];

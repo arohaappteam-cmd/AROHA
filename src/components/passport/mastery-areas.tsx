@@ -17,7 +17,7 @@ function Ring({ demonstrated, active, total }: { demonstrated: number; active: n
         cy="40"
         r={radius}
         fill="none"
-        className="stroke-primary/35"
+        className="stroke-success/35"
         strokeWidth="7"
         strokeLinecap="round"
         strokeDasharray={`${activeLength} ${circumference}`}
@@ -27,7 +27,7 @@ function Ring({ demonstrated, active, total }: { demonstrated: number; active: n
         cy="40"
         r={radius}
         fill="none"
-        className="stroke-emerald-500"
+        className="stroke-success"
         strokeWidth="7"
         strokeLinecap="round"
         strokeDasharray={`${provenLength} ${circumference}`}

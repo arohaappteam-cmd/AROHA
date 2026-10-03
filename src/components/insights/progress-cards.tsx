@@ -58,8 +58,8 @@ export function GoalProgressCard({ overview }: { overview: AnalyticsOverview }) 
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-primary/15" role="img" aria-label={`${goal.percent}% of the roadmap done`}>
-                      <div className="h-full rounded-full bg-primary" style={{ width: `${goal.percent}%` }} />
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-success/15" role="img" aria-label={`${goal.percent}% of the roadmap done`}>
+                      <div className="h-full rounded-full bg-success" style={{ width: `${goal.percent}%` }} />
                     </div>
                     <span className="w-10 text-right text-xs font-medium tabular-nums">{goal.percent}%</span>
                   </div>
@@ -110,7 +110,7 @@ export function SkillProgressCard({ overview }: { overview: AnalyticsOverview })
                     <span className="font-medium tabular-nums">
                       Lv {skill.levelFrom} → {skill.levelTo}
                     </span>
-                    <span className={cn("block", gained > 0 ? "text-emerald-600 dark:text-emerald-300" : "text-muted-foreground")}>
+                    <span className={cn("block", gained > 0 ? "text-success" : "text-muted-foreground")}>
                       {gained > 0 ? `+${gained} level${gained === 1 ? "" : "s"}` : `of ${skill.maxLevel}`}
                     </span>
                   </p>
@@ -145,7 +145,7 @@ export function ChallengeProgressCard({ overview }: { overview: AnalyticsOvervie
             icon={FlameIcon}
             title="No challenge running"
             action={
-              <Link href="/journey" className={buttonVariants({ variant: "outline", size: "sm" })}>
+              <Link href="/journey/challenges" className={buttonVariants({ variant: "outline", size: "sm" })}>
                 Browse challenges
               </Link>
             }
@@ -164,8 +164,8 @@ export function ChallengeProgressCard({ overview }: { overview: AnalyticsOvervie
                       {challenge.daysCredited} / {challenge.targetDays} days
                     </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-primary/15">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                  <div className="h-1.5 overflow-hidden rounded-full bg-success/15">
+                    <div className="h-full rounded-full bg-success" style={{ width: `${percent}%` }} />
                   </div>
                 </li>
               );

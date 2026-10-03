@@ -66,14 +66,14 @@ export function JourneySummary({ data }: { data: DashboardData }) {
             ? `${data.bestStreak.lifetimeDays} days lifetime — that's the number that matters`
             : "Progress matters more than streaks"
         }
-        href="/journey"
+        href="/journey/challenges#streaks"
       />
       <SummaryItem
         icon={TrophyIcon}
         label="Achievements"
         value={String(data.achievementCount)}
         hint="Unlocked milestones"
-        href="/journey"
+        href="/journey#achievements"
       />
     </div>
   );
