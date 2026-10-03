@@ -4,6 +4,7 @@ import { formatDay } from "@/modules/journey/calendar";
 import type { JourneyAchievement } from "@/server/services/journey.service";
 
 import { Meter } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * Rarity is how hard an achievement is to earn, shown by the frame — a
@@ -35,7 +36,7 @@ function AchievementCard({ achievement }: { achievement: JourneyAchievement }) {
           unlocked ? (achievement.rarity === "legendary" ? "glow-success border-success/60 bg-success/15" : "border-foreground/30 bg-muted") : "border-dashed bg-transparent",
         )}
       >
-        <span className={cn("-rotate-45 text-2xl", !unlocked && "grayscale")}>{achievement.emoji}</span>
+        <span className={cn("-rotate-45 text-2xl", !unlocked && "grayscale")}><Glyph emoji={achievement.emoji} /></span>
       </span>
       <p className="mt-1 text-sm leading-tight font-medium text-balance">{achievement.name}</p>
       <p className="font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase">{RARITY_LABEL[achievement.rarity]}</p>

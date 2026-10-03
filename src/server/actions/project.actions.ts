@@ -75,7 +75,7 @@ export async function transitionProjectAction(input: unknown): Promise<ActionRes
       const notes = [
         outcome.xpAwarded > 0 ? `+${outcome.xpAwarded} XP` : null,
         ...outcome.skills.filter((s) => s.xpAwarded > 0).map((s) => `${s.name} +${s.xpAwarded}${s.leveledUp ? ` (level ${s.level})` : ""}`),
-        ...outcome.achievements.map((a) => `${a.emoji} ${a.name}`),
+        ...outcome.achievements.map((a) => `Achievement: ${a.name}`),
       ].filter(Boolean);
       if (notes.length > 0) message = `${message} · ${notes.join(" · ")}`;
     }

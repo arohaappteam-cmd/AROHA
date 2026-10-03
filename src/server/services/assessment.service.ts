@@ -24,6 +24,7 @@ import { awardXp } from "@/server/progression/engine";
 import { assessmentRepository } from "@/server/repositories/assessment.repository";
 import { skillRepository } from "@/server/repositories/skill.repository";
 import { checkAchievements } from "@/server/services/achievement.service";
+import { aiAllowedFor } from "@/server/services/plan.service";
 import { awardSkills, ensureSkillCatalogue } from "@/server/services/skill.service";
 
 /**
@@ -303,17 +304,18 @@ export async function submitQuiz(userId: string, input: { assessmentKey: string;
   return record(userId, quiz, skill, evaluation, { answers: input.answers });
 }
 
-async function evaluateRubric(definition: RubricDefinition, submission: Parameters<typeof evaluateWithAI>[1]): Promise<Evaluation> {
+async function evaluateRubric(userId: string, definition: RubricDefinition, submission: Parameters<typeof evaluateWithAI>[1]): Promise<Evaluation> {
   if (!ratingsComplete(definition, submission.selfRatings)) {
     throw new AssessmentError("Rate your work on every criterion before submitting");
   }
-  return (await evaluateWithAI(definition, submission)) ?? selfReviewEvaluation(definition, submission.selfRatings);
+  const allowAI = await aiAllowedFor(userId);
+  return (await evaluateWithAI(definition, submission, { allowAI })) ?? selfReviewEvaluation(definition, submission.selfRatings);
 }
 
 export async function submitPractical(userId: string, input: PracticalSubmission): Promise<SubmissionOutcome> {
   const { definition, skill } = await requireDefinition(input.assessmentKey, "PRACTICAL");
   const evidenceUrl = input.evidenceUrl!;
-  const evaluation = await evaluateRubric(definition, {
+  const evaluation = await evaluateRubric(userId, definition, {
     response: input.response,
     evidence: [{ title: definition.deliverable, url: evidenceUrl, note: null }],
     selfRatings: input.ratings,
@@ -333,7 +335,7 @@ export async function submitProjectAssessment(userId: string, input: ProjectAsse
     throw new AssessmentError(`Choose a completed project with evidence that used ${skill.name}`);
   }
 
-  const evaluation = await evaluateRubric(definition, {
+  const evaluation = await evaluateRubric(userId, definition, {
     response: input.response,
     evidence: project.evidence.map(({ title, url, note }) => ({ title, url, note })),
     selfRatings: input.ratings,

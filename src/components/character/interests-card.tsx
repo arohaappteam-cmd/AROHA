@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import type { CharacterSheet } from "@/server/services/character.service";
+import { Glyph } from "@/components/common/glyph";
 
 export function InterestsCard({ interests }: { interests: CharacterSheet["interests"] }) {
   return (
@@ -35,7 +36,7 @@ export function InterestsCard({ interests }: { interests: CharacterSheet["intere
               >
                 {interest.lifeArea && (
                   <span aria-hidden className="text-xs">
-                    {LIFE_AREAS[interest.lifeArea].emoji}
+                    <Glyph emoji={LIFE_AREAS[interest.lifeArea].emoji} />
                   </span>
                 )}
                 {interest.label}

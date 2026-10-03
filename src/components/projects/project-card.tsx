@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { PROJECT_CATEGORIES } from "@/modules/projects/categories";
 import { PROJECT_STATUS_LABEL } from "@/modules/projects/status";
 import type { ProjectWithRelations } from "@/server/repositories/project.repository";
+import { Glyph } from "@/components/common/glyph";
 
 const STATUS_STYLE = {
   PLANNING: "bg-muted text-muted-foreground",
@@ -33,7 +34,7 @@ export function ProjectCard({ project }: { project: ProjectWithRelations }) {
         <CardHeader>
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs text-muted-foreground">
-              <span aria-hidden>{category.emoji}</span> {category.label}
+              <span aria-hidden><Glyph emoji={category.emoji} /></span> {category.label}
             </span>
             <ProjectStatusChip status={project.status} />
           </div>
@@ -45,7 +46,7 @@ export function ProjectCard({ project }: { project: ProjectWithRelations }) {
             <div className="flex flex-wrap gap-1">
               {project.skills.map(({ skill }) => (
                 <span key={skill.id} className="rounded-full border px-2 py-0.5 text-xs">
-                  <span aria-hidden>{skill.tree.emoji}</span> {skill.name}
+                  <span aria-hidden><Glyph emoji={skill.tree.emoji} /></span> {skill.name}
                 </span>
               ))}
             </div>

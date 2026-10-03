@@ -15,6 +15,9 @@
   --color-heat-3: var(--heat-3);
   --color-heat-4: var(--heat-4);
   --color-xp-foreground: var(--xp-foreground);
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -57,10 +60,10 @@
 }
 
 /*
- * Monochrome remap of Tailwind's hues. The UI is black, white and grays;
- * the only colour is the jade success accent, kept for progress, charts and
- * "done" states. Green-family classes land on jade, every other hue on gray,
- * so existing `text-amber-600`-style classes follow the theme without edits.
+ * Green-family classes land on AROHA's jade, so every "done" and progress
+ * state shares one green. Every other Tailwind hue keeps its real colour —
+ * violet (brand), amber/gold (XP and rewards), sky, rose, fuchsia, cyan…
+ * — and icons and life areas use them to tell things apart at a glance.
  */
 @theme {
   --color-green-50: oklch(0.975 0.015 165);
@@ -96,160 +99,6 @@
   --color-teal-800: oklch(0.4 0.08 165);
   --color-teal-900: oklch(0.34 0.065 165);
   --color-teal-950: oklch(0.25 0.05 165);
-  --color-red-50: oklch(0.985 0 0);
-  --color-red-100: oklch(0.97 0 0);
-  --color-red-200: oklch(0.922 0 0);
-  --color-red-300: oklch(0.87 0 0);
-  --color-red-400: oklch(0.708 0 0);
-  --color-red-500: oklch(0.556 0 0);
-  --color-red-600: oklch(0.439 0 0);
-  --color-red-700: oklch(0.371 0 0);
-  --color-red-800: oklch(0.269 0 0);
-  --color-red-900: oklch(0.205 0 0);
-  --color-red-950: oklch(0.145 0 0);
-  --color-orange-50: oklch(0.985 0 0);
-  --color-orange-100: oklch(0.97 0 0);
-  --color-orange-200: oklch(0.922 0 0);
-  --color-orange-300: oklch(0.87 0 0);
-  --color-orange-400: oklch(0.708 0 0);
-  --color-orange-500: oklch(0.556 0 0);
-  --color-orange-600: oklch(0.439 0 0);
-  --color-orange-700: oklch(0.371 0 0);
-  --color-orange-800: oklch(0.269 0 0);
-  --color-orange-900: oklch(0.205 0 0);
-  --color-orange-950: oklch(0.145 0 0);
-  --color-amber-50: oklch(0.985 0 0);
-  --color-amber-100: oklch(0.97 0 0);
-  --color-amber-200: oklch(0.922 0 0);
-  --color-amber-300: oklch(0.87 0 0);
-  --color-amber-400: oklch(0.708 0 0);
-  --color-amber-500: oklch(0.556 0 0);
-  --color-amber-600: oklch(0.439 0 0);
-  --color-amber-700: oklch(0.371 0 0);
-  --color-amber-800: oklch(0.269 0 0);
-  --color-amber-900: oklch(0.205 0 0);
-  --color-amber-950: oklch(0.145 0 0);
-  --color-yellow-50: oklch(0.985 0 0);
-  --color-yellow-100: oklch(0.97 0 0);
-  --color-yellow-200: oklch(0.922 0 0);
-  --color-yellow-300: oklch(0.87 0 0);
-  --color-yellow-400: oklch(0.708 0 0);
-  --color-yellow-500: oklch(0.556 0 0);
-  --color-yellow-600: oklch(0.439 0 0);
-  --color-yellow-700: oklch(0.371 0 0);
-  --color-yellow-800: oklch(0.269 0 0);
-  --color-yellow-900: oklch(0.205 0 0);
-  --color-yellow-950: oklch(0.145 0 0);
-  --color-lime-50: oklch(0.985 0 0);
-  --color-lime-100: oklch(0.97 0 0);
-  --color-lime-200: oklch(0.922 0 0);
-  --color-lime-300: oklch(0.87 0 0);
-  --color-lime-400: oklch(0.708 0 0);
-  --color-lime-500: oklch(0.556 0 0);
-  --color-lime-600: oklch(0.439 0 0);
-  --color-lime-700: oklch(0.371 0 0);
-  --color-lime-800: oklch(0.269 0 0);
-  --color-lime-900: oklch(0.205 0 0);
-  --color-lime-950: oklch(0.145 0 0);
-  --color-cyan-50: oklch(0.985 0 0);
-  --color-cyan-100: oklch(0.97 0 0);
-  --color-cyan-200: oklch(0.922 0 0);
-  --color-cyan-300: oklch(0.87 0 0);
-  --color-cyan-400: oklch(0.708 0 0);
-  --color-cyan-500: oklch(0.556 0 0);
-  --color-cyan-600: oklch(0.439 0 0);
-  --color-cyan-700: oklch(0.371 0 0);
-  --color-cyan-800: oklch(0.269 0 0);
-  --color-cyan-900: oklch(0.205 0 0);
-  --color-cyan-950: oklch(0.145 0 0);
-  --color-sky-50: oklch(0.985 0 0);
-  --color-sky-100: oklch(0.97 0 0);
-  --color-sky-200: oklch(0.922 0 0);
-  --color-sky-300: oklch(0.87 0 0);
-  --color-sky-400: oklch(0.708 0 0);
-  --color-sky-500: oklch(0.556 0 0);
-  --color-sky-600: oklch(0.439 0 0);
-  --color-sky-700: oklch(0.371 0 0);
-  --color-sky-800: oklch(0.269 0 0);
-  --color-sky-900: oklch(0.205 0 0);
-  --color-sky-950: oklch(0.145 0 0);
-  --color-blue-50: oklch(0.985 0 0);
-  --color-blue-100: oklch(0.97 0 0);
-  --color-blue-200: oklch(0.922 0 0);
-  --color-blue-300: oklch(0.87 0 0);
-  --color-blue-400: oklch(0.708 0 0);
-  --color-blue-500: oklch(0.556 0 0);
-  --color-blue-600: oklch(0.439 0 0);
-  --color-blue-700: oklch(0.371 0 0);
-  --color-blue-800: oklch(0.269 0 0);
-  --color-blue-900: oklch(0.205 0 0);
-  --color-blue-950: oklch(0.145 0 0);
-  --color-indigo-50: oklch(0.985 0 0);
-  --color-indigo-100: oklch(0.97 0 0);
-  --color-indigo-200: oklch(0.922 0 0);
-  --color-indigo-300: oklch(0.87 0 0);
-  --color-indigo-400: oklch(0.708 0 0);
-  --color-indigo-500: oklch(0.556 0 0);
-  --color-indigo-600: oklch(0.439 0 0);
-  --color-indigo-700: oklch(0.371 0 0);
-  --color-indigo-800: oklch(0.269 0 0);
-  --color-indigo-900: oklch(0.205 0 0);
-  --color-indigo-950: oklch(0.145 0 0);
-  --color-violet-50: oklch(0.985 0 0);
-  --color-violet-100: oklch(0.97 0 0);
-  --color-violet-200: oklch(0.922 0 0);
-  --color-violet-300: oklch(0.87 0 0);
-  --color-violet-400: oklch(0.708 0 0);
-  --color-violet-500: oklch(0.556 0 0);
-  --color-violet-600: oklch(0.439 0 0);
-  --color-violet-700: oklch(0.371 0 0);
-  --color-violet-800: oklch(0.269 0 0);
-  --color-violet-900: oklch(0.205 0 0);
-  --color-violet-950: oklch(0.145 0 0);
-  --color-purple-50: oklch(0.985 0 0);
-  --color-purple-100: oklch(0.97 0 0);
-  --color-purple-200: oklch(0.922 0 0);
-  --color-purple-300: oklch(0.87 0 0);
-  --color-purple-400: oklch(0.708 0 0);
-  --color-purple-500: oklch(0.556 0 0);
-  --color-purple-600: oklch(0.439 0 0);
-  --color-purple-700: oklch(0.371 0 0);
-  --color-purple-800: oklch(0.269 0 0);
-  --color-purple-900: oklch(0.205 0 0);
-  --color-purple-950: oklch(0.145 0 0);
-  --color-fuchsia-50: oklch(0.985 0 0);
-  --color-fuchsia-100: oklch(0.97 0 0);
-  --color-fuchsia-200: oklch(0.922 0 0);
-  --color-fuchsia-300: oklch(0.87 0 0);
-  --color-fuchsia-400: oklch(0.708 0 0);
-  --color-fuchsia-500: oklch(0.556 0 0);
-  --color-fuchsia-600: oklch(0.439 0 0);
-  --color-fuchsia-700: oklch(0.371 0 0);
-  --color-fuchsia-800: oklch(0.269 0 0);
-  --color-fuchsia-900: oklch(0.205 0 0);
-  --color-fuchsia-950: oklch(0.145 0 0);
-  --color-pink-50: oklch(0.985 0 0);
-  --color-pink-100: oklch(0.97 0 0);
-  --color-pink-200: oklch(0.922 0 0);
-  --color-pink-300: oklch(0.87 0 0);
-  --color-pink-400: oklch(0.708 0 0);
-  --color-pink-500: oklch(0.556 0 0);
-  --color-pink-600: oklch(0.439 0 0);
-  --color-pink-700: oklch(0.371 0 0);
-  --color-pink-800: oklch(0.269 0 0);
-  --color-pink-900: oklch(0.205 0 0);
-  --color-pink-950: oklch(0.145 0 0);
-  --color-rose-50: oklch(0.985 0 0);
-  --color-rose-100: oklch(0.97 0 0);
-  --color-rose-200: oklch(0.922 0 0);
-  --color-rose-300: oklch(0.87 0 0);
-  --color-rose-400: oklch(0.708 0 0);
-  --color-rose-500: oklch(0.556 0 0);
-  --color-rose-600: oklch(0.439 0 0);
-  --color-rose-700: oklch(0.371 0 0);
-  --color-rose-800: oklch(0.269 0 0);
-  --color-rose-900: oklch(0.205 0 0);
-  --color-rose-950: oklch(0.145 0 0);
 }
 
 /* Entrances for progress marks. Each fills from empty to its real value once;
@@ -290,13 +139,18 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --primary: oklch(0.55 0.22 290);
   --primary-foreground: oklch(0.985 0 0);
-  /* Jade: the one colour in a grayscale UI, reserved for earned progress. */
+  /* Brand gradient stops: violet → fuchsia → amber. */
+  --brand-1: oklch(0.55 0.22 290);
+  --brand-2: oklch(0.58 0.24 330);
+  --brand-3: oklch(0.72 0.17 65);
+  /* Jade: earned progress and "done" states. */
   --success: oklch(0.56 0.115 165);
   --success-foreground: oklch(0.985 0 0);
-  --xp: var(--success);
-  --xp-foreground: var(--success-foreground);
+  /* Gold: experience points and rewards. */
+  --xp: oklch(0.66 0.15 70);
+  --xp-foreground: oklch(0.2 0.04 70);
   /* Heatmap intensity: one hue over the empty cell, validated light→dark. */
   --heat-1: color-mix(in srgb, var(--success) 50%, var(--muted));
   --heat-2: color-mix(in srgb, var(--success) 66%, var(--muted));
@@ -311,63 +165,68 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.56 0.115 165);
-  --chart-2: oklch(0.65 0.125 165);
-  --chart-3: oklch(0.48 0.1 165);
-  --chart-4: oklch(0.74 0.115 165);
-  --chart-5: oklch(0.4 0.08 165);
+  --ring: oklch(0.55 0.22 290);
+  --chart-1: oklch(0.55 0.22 290);
+  --chart-2: oklch(0.56 0.115 165);
+  --chart-3: oklch(0.66 0.15 70);
+  --chart-4: oklch(0.6 0.15 235);
+  --chart-5: oklch(0.6 0.2 10);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: oklch(0.55 0.22 290);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-accent: oklch(0.95 0.03 290);
+  --sidebar-accent-foreground: oklch(0.3 0.12 290);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: oklch(0.55 0.22 290);
 }
 
 .dark {
-  --background: oklch(0.13 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.18 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.95 0 0);
-  --primary-foreground: oklch(0.16 0 0);
+  /* Surfaces carry a faint violet tint so the colour accents sit in one world. */
+  --background: oklch(0.14 0.012 285);
+  --foreground: oklch(0.97 0.005 285);
+  --card: oklch(0.185 0.016 285);
+  --card-foreground: oklch(0.97 0.005 285);
+  --popover: oklch(0.205 0.018 285);
+  --popover-foreground: oklch(0.97 0.005 285);
+  /* Violet brand: buttons, links, focus. Light enough to read as text on the dark background. */
+  --primary: oklch(0.74 0.16 292);
+  --primary-foreground: oklch(0.18 0.05 292);
+  --brand-1: oklch(0.72 0.18 292);
+  --brand-2: oklch(0.74 0.2 330);
+  --brand-3: oklch(0.84 0.15 75);
   --success: oklch(0.76 0.12 165);
   --success-foreground: oklch(0.18 0.03 165);
-  --xp: var(--success);
-  --xp-foreground: var(--success-foreground);
+  --xp: oklch(0.84 0.15 82);
+  --xp-foreground: oklch(0.22 0.05 75);
   --heat-1: color-mix(in srgb, var(--success) 45%, var(--muted));
   --heat-2: color-mix(in srgb, var(--success) 62%, var(--muted));
   --heat-3: color-mix(in srgb, var(--success) 80%, var(--muted));
   --heat-4: var(--success);
-  --secondary: oklch(0.25 0 0);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.24 0 0);
-  --muted-foreground: oklch(0.68 0 0);
-  --accent: oklch(0.26 0 0);
-  --accent-foreground: oklch(0.97 0 0);
+  --secondary: oklch(0.255 0.02 285);
+  --secondary-foreground: oklch(0.97 0.005 285);
+  --muted: oklch(0.245 0.018 285);
+  --muted-foreground: oklch(0.7 0.02 285);
+  --accent: oklch(0.27 0.03 288);
+  --accent-foreground: oklch(0.97 0.005 285);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.76 0.12 165);
-  --chart-2: oklch(0.66 0.12 165);
-  --chart-3: oklch(0.84 0.09 165);
-  --chart-4: oklch(0.56 0.1 165);
-  --chart-5: oklch(0.9 0.06 165);
-  --sidebar: oklch(0.155 0 0);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.95 0 0);
-  --sidebar-primary-foreground: oklch(0.16 0 0);
-  --sidebar-accent: oklch(0.24 0 0);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: oklch(0.85 0.04 290 / 11%);
+  --input: oklch(0.85 0.04 290 / 16%);
+  --ring: oklch(0.68 0.17 292);
+  --chart-1: oklch(0.74 0.16 292);
+  --chart-2: oklch(0.76 0.12 165);
+  --chart-3: oklch(0.84 0.15 82);
+  --chart-4: oklch(0.74 0.13 235);
+  --chart-5: oklch(0.72 0.17 10);
+  --sidebar: oklch(0.155 0.014 285);
+  --sidebar-foreground: oklch(0.97 0.005 285);
+  --sidebar-primary: oklch(0.74 0.16 292);
+  --sidebar-primary-foreground: oklch(0.18 0.05 292);
+  --sidebar-accent: oklch(0.27 0.06 292);
+  --sidebar-accent-foreground: oklch(0.96 0.03 292);
+  --sidebar-border: oklch(0.85 0.04 290 / 10%);
+  --sidebar-ring: oklch(0.68 0.17 292);
 }
 
 @layer base {
@@ -397,7 +256,7 @@
     width: 14px;
     height: 14px;
     pointer-events: none;
-    border-color: color-mix(in oklch, var(--foreground) 40%, transparent);
+    border-color: color-mix(in oklch, var(--primary) 60%, transparent);
     border-style: solid;
   }
   .hud-panel::before {
@@ -420,6 +279,23 @@
       linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
     background-size: 28px 28px;
     mask-image: radial-gradient(ellipse at top right, black, transparent 70%);
+  }
+
+  /* AROHA's signature gradient: violet → fuchsia → gold. */
+  .bg-gradient-brand {
+    background-image: linear-gradient(120deg, var(--brand-1), var(--brand-2) 55%, var(--brand-3));
+  }
+  .text-gradient-brand {
+    background-image: linear-gradient(100deg, var(--brand-1), var(--brand-2) 55%, var(--brand-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  /* A soft wash of colour behind hero panels. */
+  .bg-aurora {
+    background-image:
+      radial-gradient(60% 80% at 0% 0%, color-mix(in oklch, var(--brand-1) 22%, transparent), transparent 70%),
+      radial-gradient(50% 70% at 100% 100%, color-mix(in oklch, var(--brand-3) 14%, transparent), transparent 70%);
   }
 
   /* The soft light earned progress gives off. */

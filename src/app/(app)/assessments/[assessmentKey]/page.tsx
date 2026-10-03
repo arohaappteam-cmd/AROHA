@@ -14,6 +14,7 @@ import { ASSESSMENT_KIND_LABEL } from "@/modules/assessments/grading";
 import { isRealAIConfigured } from "@/server/ai";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAssessmentToTake } from "@/server/services/assessment.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Assessment" };
 
@@ -39,7 +40,7 @@ export default async function AssessmentPage(props: PageProps<"/assessments/[ass
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium tracking-[0.18em] text-primary uppercase">
           {ASSESSMENT_KIND_LABEL[definition.kind]}
           <Link href={`/skills/${skill.tree.slug}`} className="tracking-normal text-muted-foreground normal-case hover:underline">
-            <span aria-hidden>{skill.tree.emoji}</span> {skill.name}
+            <span aria-hidden><Glyph emoji={skill.tree.emoji} /></span> {skill.name}
           </Link>
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">{definition.title}</h1>

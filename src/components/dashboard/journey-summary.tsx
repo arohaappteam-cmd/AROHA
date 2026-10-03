@@ -60,7 +60,7 @@ export function JourneySummary({ data }: { data: DashboardData }) {
       <SummaryItem
         icon={FlameIcon}
         label="Best active streak"
-        value={data.bestStreak ? `${data.bestStreak.emoji} ${data.bestStreak.label} · ${data.bestStreak.count} days` : "—"}
+        value={data.bestStreak ? `${data.bestStreak.label} · ${data.bestStreak.count} days` : "—"}
         hint={
           data.bestStreak
             ? `${data.bestStreak.lifetimeDays} days lifetime — that's the number that matters`

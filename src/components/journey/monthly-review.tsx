@@ -3,6 +3,7 @@ import { formatDay } from "@/modules/journey/calendar";
 import type { MonthlyReview as Review } from "@/modules/journey/reviews";
 
 import { Delta, HudLabel } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -90,7 +91,7 @@ export function MonthlyReview({ review }: { review: Review }) {
           {weeks[0]?.areas.map((area, row) => (
             <div key={area.lifeArea} className="grid items-center gap-2 border-t py-2" style={columns}>
               <p className="flex min-w-0 items-center gap-1.5">
-                <span aria-hidden>{area.emoji}</span>
+                <span aria-hidden><Glyph emoji={area.emoji} /></span>
                 <span className="truncate font-mono text-[10px] tracking-[0.12em] text-muted-foreground uppercase">{area.label}</span>
               </p>
               {weeks.map((week) => {

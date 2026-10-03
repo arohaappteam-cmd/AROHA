@@ -8,6 +8,7 @@ import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import type { GoalCard as GoalCardData } from "@/server/services/goal-view.service";
 
 import { GoalStatusBadge, MajorGoalBadge, ProgressBar } from "./goal-badges";
+import { Glyph } from "@/components/common/glyph";
 
 export function GoalCard({ goal, today }: { goal: GoalCardData; today: string }) {
   const area = LIFE_AREAS[goal.lifeArea];
@@ -19,7 +20,7 @@ export function GoalCard({ goal, today }: { goal: GoalCardData; today: string })
       <Link href={`/goals/${goal.id}`} className="flex flex-col gap-4 p-5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-muted text-2xl" aria-hidden>
-            {area.emoji}
+            <Glyph emoji={area.emoji} />
           </span>
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-1.5">

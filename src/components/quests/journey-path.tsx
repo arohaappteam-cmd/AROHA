@@ -6,6 +6,7 @@ import type { QuestView } from "@/server/services/quest-view.service";
 
 import { categoryStyle } from "./category-style";
 import { QuestCard } from "./quest-card";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * Today's quests as stages of a journey: a path of nodes, one per category,
@@ -34,7 +35,7 @@ export function JourneyPath({ quests, xpAwarded }: { quests: QuestView[]; xpAwar
                 done ? "border-emerald-500 bg-emerald-500/15" : cn(style.border, style.soft),
               )}
             >
-              {done ? <CheckIcon className="size-6 text-emerald-500" /> : category.emoji}
+              {done ? <CheckIcon className="size-6 text-emerald-500" /> : <Glyph emoji={category.emoji} />}
             </span>
             <div className="min-w-0 flex-1">
               <QuestCard quest={quest} xpAwarded={xpAwarded} />

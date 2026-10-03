@@ -9,6 +9,7 @@ import type { SkillPathState } from "@/modules/skills/state";
 import type { SkillJourney } from "@/server/services/journey.service";
 
 import { HudLabel, Meter } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const STAGES = ["Beginner", "Intermediate", "Advanced"] as const;
 
@@ -57,7 +58,7 @@ function SkillCard({ skill }: { skill: SkillJourney }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Link href={`/skills/${skill.slug}`} className="font-medium underline-offset-4 hover:underline">
-            <span aria-hidden>{skill.emoji}</span> {skill.name}
+            <span aria-hidden><Glyph emoji={skill.emoji} /></span> {skill.name}
           </Link>
           <p className="text-xs text-muted-foreground">{frontier ? `Now: ${frontier.name}` : "Everything here is complete"}</p>
         </div>

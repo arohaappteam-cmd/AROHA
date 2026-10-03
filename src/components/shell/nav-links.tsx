@@ -1,68 +1,96 @@
 "use client";
 
-import Link from "next/link";
+import { LoaderCircleIcon } from "lucide-react";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
-import { primaryNav } from "@/config/navigation";
+import { isActivePath, navSections, type NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+/**
+ * Confirms a click instantly while the next page streams in. Fixed size and
+ * always rendered, so it never shifts the layout.
+ */
+function PendingHint() {
+  const { pending } = useLinkStatus();
+  return (
+    <LoaderCircleIcon
+      aria-hidden
+      className={cn("size-3.5 shrink-0 animate-spin text-primary transition-opacity", pending ? "opacity-100" : "opacity-0")}
+    />
+  );
 }
+
+function PlanTag({ item }: { item: NavItem }) {
+  if (!item.plan) return null;
+  return (
+    <span
+      className={cn(
+        "rounded-full border px-1.5 py-px text-[10px] font-semibold tracking-wide uppercase",
+        item.plan === "PREMIUM" ? "border-amber-400/40 text-amber-200" : "border-violet-400/40 text-violet-200",
+      )}
+    >
+      {item.available ? (item.plan === "PREMIUM" ? "Premium" : "Pro") : "Soon"}
+    </span>
+  );
+}
+
+const base = "group flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors";
 
 export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Primary" className="flex flex-col gap-1">
-      {primaryNav.map((item) => {
-        const Icon = item.icon;
-        const content = (
-          <>
-            <Icon className="size-4 shrink-0" aria-hidden />
-            <span className="flex-1 truncate">{item.label}</span>
-            {!item.available && (
-              <span className="rounded-full border px-1.5 py-px text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                Soon
-              </span>
-            )}
-          </>
-        );
+    <nav aria-label="Primary" className="flex flex-col gap-4">
+      {navSections.map((section) => (
+        <div key={section.label} className="space-y-0.5">
+          <p className="px-3 pb-1 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground/70 uppercase">{section.label}</p>
+          <ul className="space-y-0.5">
+            {section.items.map((item) => {
+              const Icon = item.icon;
 
-        const base =
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors";
+              if (!item.available) {
+                return (
+                  <li key={item.href}>
+                    <span
+                      aria-disabled="true"
+                      title={`${item.description} — coming soon`}
+                      className={cn(base, "cursor-default text-muted-foreground/60")}
+                    >
+                      <Icon className="size-4 shrink-0 opacity-60" aria-hidden />
+                      <span className="flex-1 truncate">{item.label}</span>
+                      <PlanTag item={item} />
+                    </span>
+                  </li>
+                );
+              }
 
-        if (!item.available) {
-          return (
-            <span
-              key={item.href}
-              aria-disabled="true"
-              title={`${item.description} — coming in a later phase`}
-              className={cn(base, "cursor-default text-muted-foreground/60")}
-            >
-              {content}
-            </span>
-          );
-        }
-
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              base,
-              active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground",
-            )}
-          >
-            {content}
-          </Link>
-        );
-      })}
+              const active = isActivePath(pathname, item.href);
+              return (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={onNavigate}
+                    title={item.description}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      base,
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_2px_0_0_var(--primary)]"
+                        : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground",
+                    )}
+                  >
+                    <Icon className={cn("size-4 shrink-0 transition-opacity", item.tone, !active && "opacity-75 group-hover:opacity-100")} aria-hidden />
+                    <span className="flex-1 truncate">{item.label}</span>
+                    <PlanTag item={item} />
+                    <PendingHint />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }

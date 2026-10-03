@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
+import { getEnv } from "@/config/env";
 import { isAuthEnabled } from "@/server/auth/current-user";
 import { safeNext } from "@/server/auth/redirects";
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 const ERRORS: Record<string, string> = {
   link: "That link has expired or was already used. Sign in, or ask for a new one.",
+  oauth: "Google sign-in didn't finish. Try again, or use your email.",
 };
 
 export default async function LoginPage(props: PageProps<"/login">) {
@@ -27,7 +29,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           Your account and everything in it has been deleted.
         </p>
       )}
-      <AuthForm next={next} initialError={error} />
+      <AuthForm next={next} initialError={error} google={getEnv().AUTH_GOOGLE === "on"} />
     </AuthShell>
   );
 }

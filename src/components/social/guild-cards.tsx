@@ -7,6 +7,7 @@ import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import type { Guild } from "@/modules/social/types";
 
 import { GuildMembershipButton } from "./membership-buttons";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -16,7 +17,7 @@ export function GuildCard({ guild, joined, reasons }: { guild: Guild; joined: bo
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span aria-hidden className="text-xl">
-            {guild.emoji}
+            <Glyph emoji={guild.emoji} />
           </span>
           <Link href={`/community/guilds/${guild.slug}`} className="underline-offset-4 hover:underline">
             {guild.name}

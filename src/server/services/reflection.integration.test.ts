@@ -39,7 +39,8 @@ async function advanceOneDay(u: TestUser) {
 }
 
 beforeAll(async () => {
-  const created = await db.user.create({ data: { handle: HANDLE, displayName: "Reflection Tester", timezone: "UTC" } });
+  // Premium, so AI summaries are allowed; the stranger stays on Free.
+  const created = await db.user.create({ data: { handle: HANDLE, displayName: "Reflection Tester", timezone: "UTC", plan: "PREMIUM" } });
   const other = await db.user.create({ data: { handle: `${HANDLE}-stranger`, displayName: "Stranger", timezone: "UTC" } });
   user = { id: created.id, timezone: "UTC" };
   stranger = { id: other.id, timezone: "UTC" };
@@ -123,6 +124,17 @@ describe("daily reflection", () => {
     expect(saved).toMatchObject({ summarySource: "ai", aiSummary: "You kept moving on a heavy day." });
     // Only the reflection and the day's quest record reach the model — never the journal.
     expect(JSON.stringify(seen)).not.toContain("Friday helped");
+  });
+
+  it("keeps AI to Premium: a Free account gets the built-in summary even with AI on", async () => {
+    let called = false;
+    getMockAIProvider().register("reflections.daily-summary", () => {
+      called = true;
+      return { summary: "Should not be used.", suggestion: "Should not be used." };
+    });
+    const saved = await reflections.saveReflection(stranger, { date: today(), mood: "GOOD", learned: "Patience", wentWell: null, difficult: null, proud: null, differently: null });
+    expect(saved.summarySource).toBe("fallback");
+    expect(called).toBe(false);
   });
 
   it("refuses future days and days beyond the window", async () => {

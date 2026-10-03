@@ -27,6 +27,7 @@ import { experimentRepository, type ExperimentWithDays } from "@/server/reposito
 import { questRepository } from "@/server/repositories/quest.repository";
 import { checkAchievements } from "@/server/services/achievement.service";
 import * as goals from "@/server/services/goal.service";
+import { planLimitMessage } from "@/server/services/plan.service";
 
 /**
  * Experiment Mode (spec §41): trying something for a while without
@@ -123,6 +124,8 @@ export type ExperimentsOverview = {
   past: ExperimentView[];
   templates: (typeof EXPERIMENT_TEMPLATES)[number][];
   canStart: boolean;
+  /** Set when the user's plan, not the overall cap, is what's full. */
+  planLimit: string | null;
 };
 
 export async function getExperimentsOverview(user: UserLike): Promise<ExperimentsOverview> {
@@ -130,12 +133,14 @@ export async function getExperimentsOverview(user: UserLike): Promise<Experiment
   const experiments = (await settle(await experimentRepository.list(user.id), today)).map((e) => toView(e, today));
   const active = experiments.filter((e) => e.status === "ACTIVE");
   const running = new Set(active.map((e) => e.templateKey));
+  const planLimit = active.length < MAX_ACTIVE_EXPERIMENTS ? await planLimitMessage(user.id, "activeExperiments", async () => active.length) : null;
   return {
     active,
     reviewDue: experiments.filter((e) => e.status === "REVIEW_DUE"),
     past: experiments.filter((e) => e.status === "REVIEWED" || e.status === "ABANDONED"),
     templates: EXPERIMENT_TEMPLATES.filter((template) => !running.has(template.key)),
-    canStart: active.length < MAX_ACTIVE_EXPERIMENTS,
+    canStart: active.length < MAX_ACTIVE_EXPERIMENTS && !planLimit,
+    planLimit,
   };
 }
 
@@ -224,6 +229,8 @@ async function assertCanStart(user: UserLike, templateKey: string | null) {
   if (active.length >= MAX_ACTIVE_EXPERIMENTS) {
     throw new ExperimentError("Two experiments at a time is the limit — curiosity works best with room to breathe.");
   }
+  const planLimit = await planLimitMessage(user.id, "activeExperiments", async () => active.length);
+  if (planLimit) throw new ExperimentError(planLimit);
   return today;
 }
 

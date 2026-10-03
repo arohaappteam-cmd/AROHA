@@ -1,6 +1,13 @@
 import "server-only";
 
 import { db } from "@/server/db";
+import { cachedCatalogue } from "@/server/db/catalogue-cache";
+
+const loadSkills = cachedCatalogue(() =>
+  db.skill.findMany({
+    select: { id: true, name: true, baseXp: true, maxLevel: true, tree: { select: { slug: true, name: true, emoji: true } } },
+  }),
+);
 
 /**
  * Read-only aggregates for personal analytics. Journal entries are never
@@ -36,10 +43,9 @@ export const analyticsRepository = {
     });
   },
 
+  /** The skill catalogue (cached per instance in production). */
   skills() {
-    return db.skill.findMany({
-      select: { id: true, name: true, baseXp: true, maxLevel: true, tree: { select: { slug: true, name: true, emoji: true } } },
-    });
+    return loadSkills();
   },
 
   /** When each goal moved: completed missions and completed goal-linked quests. */

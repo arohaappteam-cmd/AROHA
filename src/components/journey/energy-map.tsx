@@ -1,5 +1,6 @@
 import { polygonPoints } from "@/modules/journey/chart";
 import type { AreaProgress } from "@/modules/journey/progress";
+import { Glyph } from "@/components/common/glyph";
 
 const SIZE = 260;
 const CENTER = SIZE / 2;
@@ -45,7 +46,7 @@ export function EnergyMap({ areas, hasPrevious }: { areas: AreaProgress[]; hasPr
         {labels.map(([x, y], index) => (
           <g key={areas[index].lifeArea} transform={`translate(${x.toFixed(1)},${y.toFixed(1)})`}>
             <text textAnchor="middle" dy="-0.2em" className="fill-foreground text-[15px]">
-              {areas[index].emoji}
+              <Glyph emoji={areas[index].emoji} />
             </text>
             <text textAnchor="middle" dy="1.1em" className="fill-muted-foreground font-mono text-[10px]">
               {areas[index].completed}

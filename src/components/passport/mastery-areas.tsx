@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { MasteryArea } from "@/server/services/passport.service";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -50,7 +51,7 @@ export function MasteryAreas({ areas }: { areas: MasteryArea[] }) {
             <div className="relative grid place-items-center">
               <Ring demonstrated={area.skillsDemonstrated} active={area.skillsActive} total={area.totalSkills} />
               <span className="absolute text-2xl" aria-hidden>
-                {area.emoji}
+                <Glyph emoji={area.emoji} />
               </span>
             </div>
             <div className="min-w-0 space-y-0.5">

@@ -14,6 +14,7 @@ import { summarizeReflection } from "@/server/ai/reflection-summarizer";
 import { db } from "@/server/db";
 import { reflectionRepository } from "@/server/repositories/reflection.repository";
 import { checkAchievements } from "@/server/services/achievement.service";
+import { aiAllowedFor } from "@/server/services/plan.service";
 
 /**
  * End-of-day reflection (spec §42, §45). One reflection per calendar day,
@@ -152,7 +153,7 @@ export async function saveReflection(user: UserLike, input: ReflectionInput): Pr
   // The summary is a nice-to-have: the user's words are already saved.
   let row = saved;
   try {
-    const summary = await summarizeReflection(answers, facts);
+    const summary = await summarizeReflection(answers, facts, { allowAI: await aiAllowedFor(user.id) });
     row = await reflectionRepository.setSummary(saved.id, {
       aiSummary: summary.summary,
       aiSuggestion: summary.suggestion,

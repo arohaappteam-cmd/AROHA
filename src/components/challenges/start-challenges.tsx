@@ -7,6 +7,7 @@ import { useActionRunner } from "@/components/goals/use-action-runner";
 import { Button } from "@/components/ui/button";
 import { startChallengeAction } from "@/server/actions/challenge.actions";
 import type { ChallengeTemplateView } from "@/server/services/challenge.service";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * The challenge templates that can be started. Deliberately capped at two
@@ -30,7 +31,7 @@ export function StartChallenges({ templates, canStart }: { templates: ChallengeT
           <li key={template.key} className="flex flex-col gap-2 rounded-xl border border-dashed p-4">
             <p className="flex items-center gap-2 font-medium">
               <span className="text-xl" aria-hidden>
-                {template.emoji}
+                <Glyph emoji={template.emoji} />
               </span>
               {template.title}
             </p>

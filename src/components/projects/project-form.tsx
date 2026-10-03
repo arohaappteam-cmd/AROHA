@@ -15,6 +15,7 @@ import { PROJECT_CATEGORIES, PROJECT_CATEGORY_LIST } from "@/modules/projects/ca
 import type { SkillOptionTree } from "@/server/services/project.service";
 
 import { SkillPicker } from "./skill-picker";
+import { Glyph } from "@/components/common/glyph";
 
 export type ProjectFormValues = {
   title: string;
@@ -105,7 +106,7 @@ export function ProjectForm({
                 )}
               >
                 <span className="text-sm font-medium">
-                  <span aria-hidden>{category.emoji}</span> {category.label}
+                  <span aria-hidden><Glyph emoji={category.emoji} /></span> {category.label}
                 </span>
                 <span className="text-xs text-muted-foreground">{category.example}</span>
               </button>

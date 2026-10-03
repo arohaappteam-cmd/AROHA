@@ -7,9 +7,10 @@ import { createSupabaseServerClient } from "@/server/auth/supabase";
 const OTP_TYPES: readonly EmailOtpType[] = ["signup", "invite", "magiclink", "recovery", "email_change", "email"];
 
 /**
- * Where the links in sign-up and password-reset emails land. Handles both
- * shapes Supabase sends: `token_hash` + `type` (works in any browser) and a
- * PKCE `code` (works in the browser that asked for the email).
+ * Where the links in sign-up and password-reset emails land, and where Google
+ * sign-in returns. Handles both shapes Supabase sends: `token_hash` + `type`
+ * (works in any browser) and a PKCE `code` (works in the browser that
+ * started the sign-in — Google's always does).
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -17,6 +18,8 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const code = searchParams.get("code");
+  // Google (or Supabase) refused or the person cancelled at Google.
+  if (searchParams.get("error")) return NextResponse.redirect(new URL("/login?error=oauth", request.url));
 
   const supabase = await createSupabaseServerClient();
   let ok = false;

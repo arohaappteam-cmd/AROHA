@@ -6,6 +6,7 @@ import { EvaluatorBadge } from "@/components/proof/proof-badges";
 import { cn } from "@/lib/utils";
 import { ASSESSMENT_KIND_LABEL } from "@/modules/assessments/grading";
 import type { SkillPassport } from "@/server/services/passport.service";
+import { Glyph } from "@/components/common/glyph";
 
 const dateFormat = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" });
 const shortDate = new Intl.DateTimeFormat("en", { day: "numeric", month: "short" });
@@ -111,7 +112,7 @@ export function ProjectsGallery({ projects }: { projects: SkillPassport["project
             >
               <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>
-                  <span aria-hidden>{project.category.emoji}</span> {project.category.label}
+                  <span aria-hidden><Glyph emoji={project.category.emoji} /></span> {project.category.label}
                 </span>
                 <span className={completed ? "font-medium text-emerald-600 dark:text-emerald-300" : ""}>
                   {completed && project.completedAt ? `Shipped ${dateFormat.format(project.completedAt)}` : "In the making"}
@@ -202,7 +203,7 @@ export function MilestoneTimeline({ milestones }: { milestones: SkillPassport["m
               className="absolute top-0 -left-[37px] grid size-7 place-items-center rounded-full border bg-card text-sm"
               aria-hidden
             >
-              {milestone.emoji}
+              <Glyph emoji={milestone.emoji} />
             </span>
             {milestone.href ? (
               <Link href={milestone.href} className="block rounded-lg hover:underline">
@@ -239,7 +240,7 @@ export function AchievementStrip({ achievements }: { achievements: SkillPassport
           className="flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/8 py-1.5 pr-3.5 pl-1.5"
         >
           <span className="grid size-7 place-items-center rounded-full bg-card text-base" aria-hidden>
-            {achievement.emoji}
+            <Glyph emoji={achievement.emoji} />
           </span>
           <span className="text-sm font-medium">{achievement.name}</span>
         </li>
@@ -272,7 +273,7 @@ export function ChallengesAndExperiences({
             {challenges.map((challenge) => (
               <li key={challenge.id} className="flex items-center gap-3 rounded-xl border bg-card px-3 py-2.5">
                 <span className="text-xl" aria-hidden>
-                  {challenge.emoji}
+                  <Glyph emoji={challenge.emoji} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{challenge.title}</p>
@@ -293,7 +294,9 @@ export function ChallengesAndExperiences({
           <ul className="space-y-2">
             {experiences.map((experience) => (
               <li key={experience.id} className="rounded-xl border bg-card px-3 py-2.5">
-                <p className="text-sm font-medium">🌎 {experience.title}</p>
+                <p className="flex items-center gap-1.5 text-sm font-medium">
+                  <Glyph emoji="🌎" /> {experience.title}
+                </p>
                 {experience.note && <p className="line-clamp-2 text-xs text-muted-foreground">{experience.note}</p>}
                 <p className="text-xs text-muted-foreground">{dateFormat.format(experience.date)}</p>
               </li>

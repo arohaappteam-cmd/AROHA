@@ -3,6 +3,7 @@
 import { FlaskConicalIcon, LoaderCircleIcon, PlayIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { UpgradeNotice } from "@/components/plans/upgrade-notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ import type { ExperimentTemplate } from "@/modules/experiments/catalogue";
 import { EXPERIMENT_DURATION } from "@/modules/experiments/logic";
 import { LIFE_AREA_LIST } from "@/modules/identity/life-areas";
 import { startCustomExperimentAction, startTemplateExperimentAction } from "@/server/actions/experiment.actions";
+import { Glyph } from "@/components/common/glyph";
 
 function Feedback({ result }: { result: ActionResult | null }) {
   if (!result) return null;
@@ -26,24 +28,35 @@ function Feedback({ result }: { result: ActionResult | null }) {
   );
 }
 
-export function ExperimentTemplates({ templates, canStart }: { templates: readonly ExperimentTemplate[]; canStart: boolean }) {
+export function ExperimentTemplates({
+  templates,
+  canStart,
+  planLimit = null,
+}: {
+  templates: readonly ExperimentTemplate[];
+  canStart: boolean;
+  planLimit?: string | null;
+}) {
   const [result, setResult] = useState<ActionResult | null>(null);
   const [startingKey, setStartingKey] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   return (
     <div className="space-y-3">
-      {!canStart && (
-        <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          Two experiments are running — that&apos;s the limit, so each one gets a fair try. Wrap one up to start another.
-        </p>
-      )}
+      {!canStart &&
+        (planLimit ? (
+          <UpgradeNotice message={planLimit} />
+        ) : (
+          <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+            Two experiments are running — that&apos;s the limit, so each one gets a fair try. Wrap one up to start another.
+          </p>
+        ))}
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {templates.map((template) => (
           <li key={template.key} className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
             <p className="flex items-center gap-2 font-medium">
               <span className="text-2xl" aria-hidden>
-                {template.emoji}
+                <Glyph emoji={template.emoji} />
               </span>
               {template.title}
             </p>
@@ -151,7 +164,7 @@ export function CustomExperimentForm({ canStart }: { canStart: boolean }) {
         >
           {LIFE_AREA_LIST.map((area) => (
             <option key={area.key} value={area.key}>
-              {area.emoji} {area.label}
+              <Glyph emoji={area.emoji} /> {area.label}
             </option>
           ))}
         </select>

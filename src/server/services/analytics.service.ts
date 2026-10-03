@@ -26,6 +26,7 @@ import { computeRoadmapProgress, goalPercent } from "@/modules/goals/progress";
 import { aiOrFallback, type AISource } from "@/server/ai/run";
 import { analyticsRepository } from "@/server/repositories/analytics.repository";
 import { goalRepository } from "@/server/repositories/goal.repository";
+import { aiAllowedFor } from "@/server/services/plan.service";
 
 type UserLike = Pick<User, "id" | "timezone">;
 
@@ -169,6 +170,7 @@ export async function getInsightReport({ overview, patterns, userId }: Analytics
     },
     // An empty draft grounds to nothing, which selects the rule-based report below.
     () => ({ headline: "", insights: [], recommendations: [] }),
+    { allowed: await aiAllowedFor(userId) },
   );
 
   const grounded = groundReport(result.value, patterns, allowedLinks(patterns, overview));

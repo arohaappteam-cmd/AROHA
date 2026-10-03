@@ -15,6 +15,7 @@ import type { TierTitle } from "@/modules/progression/levels";
 import { cn } from "@/lib/utils";
 import { saveAppearanceAction } from "@/server/actions/identity.actions";
 
+import { Glyph } from "../../common/glyph";
 import { CharacterAvatar } from "../character-avatar";
 import { SaveBar } from "./save-bar";
 import { useSave } from "./use-save";
@@ -135,7 +136,7 @@ export function AppearanceEditor({
                       value.emblem === key ? "border-primary bg-primary/10" : "border-transparent hover:bg-muted",
                     )}
                   >
-                    <span aria-hidden>{emblem.glyph}</span>
+                    <Glyph emoji={emblem.glyph} />
                   </button>
                 ),
               )}

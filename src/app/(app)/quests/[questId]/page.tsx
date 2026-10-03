@@ -1,4 +1,4 @@
-import { ArrowLeftIcon, BookOpenIcon, CompassIcon, FlagIcon, HeadphonesIcon, ListChecksIcon, SparklesIcon, TargetIcon } from "lucide-react";
+import { ArrowLeftIcon, BookOpenIcon, CheckIcon, CompassIcon, FlagIcon, FlaskConicalIcon, HeadphonesIcon, ListChecksIcon, SparklesIcon, TargetIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { displayDateOnly } from "@/modules/goals/dates";
 import { categoryFor } from "@/modules/quests/categories";
 import { getQuestDetail, type QuestDetail } from "@/server/services/quest-view.service";
+import { Glyph } from "@/components/common/glyph";
 
 export async function generateMetadata(props: PageProps<"/quests/[questId]">): Promise<Metadata> {
   const { questId } = await props.params;
@@ -55,7 +56,7 @@ function PayloadCard({ quest }: { quest: QuestDetail }) {
           {quest.mission && (
             <span className="block truncate text-sm text-muted-foreground">
               Mission: {quest.mission.title}
-              {quest.mission.status === "COMPLETED" && " ✓"}
+              {quest.mission.status === "COMPLETED" && <CheckIcon className="ml-1 inline size-3.5 text-emerald-400" aria-label="done" />}
             </span>
           )}
         </span>
@@ -70,8 +71,8 @@ function PayloadCard({ quest }: { quest: QuestDetail }) {
         href={`/discover/${payload.experimentId}`}
         className="group flex items-center gap-3 rounded-xl border p-4 transition-colors hover:border-primary/50"
       >
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-500/12 text-xl" aria-hidden>
-          🧪
+        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-cyan-500/12 text-xl" aria-hidden>
+          <FlaskConicalIcon className="size-5 text-cyan-300" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-xs text-muted-foreground">Part of your experiment</span>
@@ -126,7 +127,7 @@ export default async function QuestPage(props: PageProps<"/quests/[questId]">) {
         <div className="relative space-y-4 p-6 md:p-8">
           <div className="flex items-center gap-3">
             <span className={cn("grid size-14 place-items-center rounded-2xl border-2 text-3xl", style.border, style.soft)} aria-hidden>
-              {category.emoji}
+              <Glyph emoji={category.emoji} />
             </span>
             <div>
               <p className={cn("text-xs font-semibold tracking-[0.2em] uppercase", style.text)}>

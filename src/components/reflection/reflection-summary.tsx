@@ -3,6 +3,7 @@ import { BotIcon, LightbulbIcon, SparklesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { moodMeta } from "@/modules/reflection/reflection";
 import type { ReflectionView } from "@/server/services/reflection.service";
+import { Glyph } from "@/components/common/glyph";
 
 /** The day's summary and one idea for tomorrow, labelled with where it came from. */
 export function ReflectionSummary({ reflection, className }: { reflection: ReflectionView; className?: string }) {
@@ -18,7 +19,7 @@ export function ReflectionSummary({ reflection, className }: { reflection: Refle
           Your day, summarised
           {mood && (
             <span className="font-normal text-muted-foreground">
-              · <span aria-hidden>{mood.emoji}</span> {mood.label}
+              · <span aria-hidden><Glyph emoji={mood.emoji} /></span> {mood.label}
             </span>
           )}
         </p>

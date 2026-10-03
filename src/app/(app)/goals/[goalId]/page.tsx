@@ -22,6 +22,7 @@ import { deadlineState, describeDeadline, displayDateOnly } from "@/modules/goal
 import { STARTING_POINT_OPTIONS } from "@/modules/goals/status";
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import { getGoalDetail } from "@/server/services/goal-view.service";
+import { Glyph } from "@/components/common/glyph";
 
 export async function generateMetadata(props: PageProps<"/goals/[goalId]">): Promise<Metadata> {
   const { goalId } = await props.params;
@@ -59,7 +60,7 @@ export default async function GoalPage(props: PageProps<"/goals/[goalId]">) {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 gap-4">
           <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-muted text-3xl" aria-hidden>
-            {area.emoji}
+            <Glyph emoji={area.emoji} />
           </span>
           <div className="min-w-0 space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">

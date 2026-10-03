@@ -1,7 +1,7 @@
 import type { Instrumentation } from "next";
 
 /**
- * Every server error, as one structured line in the host's logs (Render →
+ * Every server error, as one structured line in the host's logs (Vercel →
  * Logs), keyed by the same digest the error page shows as "Ref". Optionally
  * also posted to a chat webhook (Discord or Slack) via ERROR_WEBHOOK_URL.
  *

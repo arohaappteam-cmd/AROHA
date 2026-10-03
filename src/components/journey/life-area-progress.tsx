@@ -1,6 +1,7 @@
 import type { AreaProgress, LifeAreaProgress as Progress } from "@/modules/journey/progress";
 
 import { Delta, HudLabel, Meter } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 function AreaRow({ area, hasPrevious }: { area: AreaProgress; hasPrevious: boolean }) {
   const change = area.percent !== null && area.previousPercent !== null ? area.percent - area.previousPercent : null;
@@ -8,7 +9,7 @@ function AreaRow({ area, hasPrevious }: { area: AreaProgress; hasPrevious: boole
     <li className="grid grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)_3rem] items-center gap-3 py-2.5 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_3.5rem_6rem]">
       <p className="flex min-w-0 items-center gap-2">
         <span aria-hidden className="text-lg leading-none">
-          {area.emoji}
+          <Glyph emoji={area.emoji} />
         </span>
         <span className="truncate font-mono text-[11px] tracking-[0.14em] uppercase">{area.label}</span>
       </p>
@@ -54,7 +55,7 @@ export function LifeAreaProgress({ areas, hasPrevious }: { areas: Progress; hasP
           <ul className="flex flex-wrap gap-1.5">
             {areas.quiet.map((area) => (
               <li key={area.lifeArea} className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground">
-                <span aria-hidden>{area.emoji}</span> {area.label}
+                <span aria-hidden><Glyph emoji={area.emoji} /></span> {area.label}
               </li>
             ))}
           </ul>

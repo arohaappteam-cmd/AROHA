@@ -14,6 +14,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
 import { STARTING_POINT_OPTIONS } from "@/modules/goals/status";
 import { LIFE_AREA_LIST } from "@/modules/identity/life-areas";
+import { Glyph } from "@/components/common/glyph";
 
 export type GoalFormValues = {
   title: string;
@@ -110,7 +111,7 @@ export function GoalForm({
                 )}
               >
                 <span aria-hidden className="text-lg">
-                  {area.emoji}
+                  <Glyph emoji={area.emoji} />
                 </span>
                 <span className="min-w-0 flex-1 truncate">{area.label}</span>
                 {suggestedAreas.includes(area.key) && (

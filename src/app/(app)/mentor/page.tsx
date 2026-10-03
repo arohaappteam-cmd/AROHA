@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { PageHeader } from "@/components/common/page-header";
-import { Badge } from "@/components/ui/badge";
+import { PlanBadge } from "@/components/plans/plan-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -25,7 +25,7 @@ export default function MentorPage() {
       <PageHeader
         eyebrow="AI Mentor"
         title="Your mentor is on the way"
-        description="A guide that reads your progress and helps you decide what's next. It isn't switched on yet — everything else in AROHA works without it."
+        description="A guide that reads your progress and helps you decide what's next. It arrives with Premium and isn't switched on yet — everything else in AROHA works without it."
       />
 
       <Card>
@@ -34,7 +34,7 @@ export default function MentorPage() {
             <span className="grid size-10 place-items-center rounded-xl bg-muted">
               <MessageCircleIcon className="size-5" aria-hidden />
             </span>
-            <Badge variant="outline">Coming soon</Badge>
+            <PlanBadge tier="PREMIUM" label="Premium · coming soon" />
           </div>
           <ul className="grid gap-4 sm:grid-cols-3">
             {PREVIEW.map((item) => (
@@ -50,9 +50,9 @@ export default function MentorPage() {
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">In the meantime:</p>
         <div className="flex flex-wrap gap-2">
-          <Link href="/insights" className={buttonVariants({ variant: "outline", size: "sm" })}>
+          <Link href="/journey" className={buttonVariants({ variant: "outline", size: "sm" })}>
             <ChartLineIcon data-icon="inline-start" />
-            See your trends
+            See your progress
           </Link>
           <Link href="/skills" className={buttonVariants({ variant: "outline", size: "sm" })}>
             <GitBranchIcon data-icon="inline-start" />

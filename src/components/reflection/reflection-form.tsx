@@ -11,6 +11,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
 import { MOOD_OPTIONS, REFLECTION_QUESTIONS, type ReflectionAnswerKey } from "@/modules/reflection/reflection";
 import { saveDailyReflectionAction } from "@/server/actions/journal.actions";
+import { Glyph } from "@/components/common/glyph";
 
 type Answers = Record<ReflectionAnswerKey, string>;
 
@@ -58,7 +59,7 @@ export function ReflectionForm({
                   active ? "border-primary bg-primary/12 font-medium text-primary" : "hover:border-primary/50",
                 )}
               >
-                <span aria-hidden>{option.emoji}</span>
+                <span aria-hidden><Glyph emoji={option.emoji} /></span>
                 {option.label}
               </button>
             );

@@ -11,6 +11,7 @@ import { ASSESSMENT_KIND_LABEL, confirmsAbility } from "@/modules/assessments/gr
 import { RUBRIC_MAX, RUBRIC_SCALE } from "@/modules/assessments/types";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAttempt } from "@/server/services/assessment.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Assessment result" };
 
@@ -59,7 +60,7 @@ export default async function AttemptPage(props: PageProps<"/assessments/attempt
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               <span>{ASSESSMENT_KIND_LABEL[attempt.kind]}</span>
               <span>
-                <span aria-hidden>{attempt.skill.tree.emoji}</span> {attempt.skill.name}
+                <span aria-hidden><Glyph emoji={attempt.skill.tree.emoji} /></span> {attempt.skill.name}
               </span>
               <EvaluatorBadge evaluator={attempt.evaluator} />
               <span>

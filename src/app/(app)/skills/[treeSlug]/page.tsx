@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { findTreeSpec } from "@/modules/skills/catalogue";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getSkillTreeDetail } from "@/server/services/skill.service";
+import { Glyph } from "@/components/common/glyph";
 
 export async function generateMetadata(props: PageProps<"/skills/[treeSlug]">): Promise<Metadata> {
   const { treeSlug } = await props.params;
@@ -38,7 +39,7 @@ export default async function SkillTreePage(props: PageProps<"/skills/[treeSlug]
         eyebrow="Skill tree"
         title={
           <span className="flex items-center gap-2.5">
-            <span aria-hidden>{tree.emoji}</span>
+            <span aria-hidden><Glyph emoji={tree.emoji} /></span>
             {tree.name}
           </span>
         }

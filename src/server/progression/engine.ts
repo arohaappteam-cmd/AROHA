@@ -15,9 +15,11 @@ export type { ProgressionOutcome };
  * Quest completed → backend validates → XP transaction created → total XP
  * updated → level recalculated → stats updated (spec §6).
  *
- * Every rule here is deterministic and backend-owned. Totals are never stored
- * as bare numbers: total XP and every attribute are derived by summing an
- * append-only ledger, so progression is always auditable and reversible.
+ * Every rule here is deterministic and backend-owned. The append-only ledger
+ * is the source of truth, so progression is always auditable and reversible.
+ * Total XP is read from User.totalXp, a rollup the database keeps in step
+ * with the ledger inside the same transaction (see the schema), so no code
+ * here ever writes a total.
  */
 
 export type AwardInput = {
@@ -49,9 +51,9 @@ function outcomeFor(totalXpBefore: number, awarded: number, attributes: Attribut
   };
 }
 
-async function totalXpFor(tx: Prisma.TransactionClient, userId: string): Promise<number> {
-  const result = await tx.xpTransaction.aggregate({ where: { userId }, _sum: { amount: true } });
-  return result._sum.amount ?? 0;
+async function totalXpFor(client: Prisma.TransactionClient, userId: string): Promise<number> {
+  const user = await client.user.findUnique({ where: { id: userId }, select: { totalXp: true } });
+  return user?.totalXp ?? 0;
 }
 
 /**
@@ -63,8 +65,7 @@ async function totalXpFor(tx: Prisma.TransactionClient, userId: string): Promise
 export async function awardXp(input: AwardInput): Promise<ProgressionOutcome> {
   // Reject invalid XP outright — never write a negative or absurd amount.
   if (!isAwardableXp(input.amount)) {
-    const totalXp = await db.xpTransaction.aggregate({ where: { userId: input.userId }, _sum: { amount: true } });
-    return outcomeFor(totalXp._sum.amount ?? 0, 0, [], false);
+    return outcomeFor(await totalXpFor(db, input.userId), 0, [], false);
   }
 
   const attributes = input.lifeArea ? attributeAwards(input.lifeArea, input.amount) : [];
@@ -100,8 +101,7 @@ export async function awardXp(input: AwardInput): Promise<ProgressionOutcome> {
   } catch (error) {
     // Already awarded for this source (including a concurrent double-submit).
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const before = await db.xpTransaction.aggregate({ where: { userId: input.userId }, _sum: { amount: true } });
-      return outcomeFor(before._sum.amount ?? 0, input.amount, attributes, false);
+      return outcomeFor(await totalXpFor(db, input.userId), input.amount, attributes, false);
     }
     throw error;
   }
@@ -113,7 +113,7 @@ export async function awardXp(input: AwardInput): Promise<ProgressionOutcome> {
  */
 export async function revokeXp(userId: string, sourceType: XpSourceType, sourceId: string): Promise<ProgressionOutcome> {
   const existing = await db.xpTransaction.findFirst({ where: { userId, sourceType, sourceId } });
-  const before = await progressionTotals(userId);
+  const before = await totalXpFor(db, userId);
 
   if (!existing) return outcomeFor(before, 0, [], false);
 
@@ -133,9 +133,4 @@ export async function revokeXp(userId: string, sourceType: XpSourceType, sourceI
     xpToNextLevel: progress.xpToNextLevel,
     attributes: [],
   };
-}
-
-async function progressionTotals(userId: string): Promise<number> {
-  const result = await db.xpTransaction.aggregate({ where: { userId }, _sum: { amount: true } });
-  return result._sum.amount ?? 0;
 }

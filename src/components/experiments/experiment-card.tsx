@@ -5,6 +5,7 @@ import { categoryStyle } from "@/components/quests/category-style";
 import { cn } from "@/lib/utils";
 import { DECISION_META } from "@/modules/experiments/logic";
 import type { ExperimentView } from "@/server/services/experiment.service";
+import { Glyph } from "@/components/common/glyph";
 
 /** Practice days as a row of dots: filled for days actually tried. */
 export function PracticeDots({ experiment }: { experiment: ExperimentView }) {
@@ -41,7 +42,7 @@ export function ExperimentCard({ experiment }: { experiment: ExperimentView }) {
     >
       <div className="flex items-start gap-3">
         <span className="text-2xl" aria-hidden>
-          {experiment.emoji}
+          <Glyph emoji={experiment.emoji} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-medium">{experiment.title}</p>

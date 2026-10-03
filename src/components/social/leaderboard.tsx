@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { LEADERBOARD_METRICS, metricMeta, type BoardRow, type LeaderboardMetric } from "@/modules/social/leaderboards";
 import type { Guild } from "@/modules/social/types";
+import { Glyph } from "@/components/common/glyph";
 
 function href(metric: LeaderboardMetric | null, guildSlug: string | null): string {
   const params = new URLSearchParams();
@@ -55,7 +56,7 @@ export function BoardChooser({
               href={href(metric, entry.slug)}
               className={cn("rounded-lg border px-2.5 py-1 text-xs", guild?.slug === entry.slug ? "border-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}
             >
-              {entry.emoji} {entry.name}
+              <Glyph emoji={entry.emoji} /> {entry.name}
             </Link>
           ))}
         </div>

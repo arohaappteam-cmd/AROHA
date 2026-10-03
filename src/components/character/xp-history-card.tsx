@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ATTRIBUTES } from "@/modules/progression/attributes";
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import type { XpEntry } from "@/server/services/character.service";
+import { Glyph } from "@/components/common/glyph";
 
 const timeFormat = new Intl.DateTimeFormat("en", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -37,7 +38,7 @@ export function XpHistoryCard({ entries }: { entries: XpEntry[] }) {
               return (
                 <li key={entry.id} className="flex items-start gap-3 py-2.5 first:pt-0 last:pb-0">
                   <span aria-hidden className="mt-0.5 text-lg">
-                    {area?.emoji ?? "✨"}
+                    <Glyph emoji={area?.emoji ?? "✨"} />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{entry.reason}</p>

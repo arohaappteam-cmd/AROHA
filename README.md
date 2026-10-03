@@ -3,9 +3,9 @@
 AI-powered real-life personal growth and progression system. The product vision
 lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
 
-**Current state: real accounts (Supabase Auth) and a live community. The AI Mentor page is "coming soon".**
+**Current state: real accounts (email + Google via Supabase Auth), a live community, and Free / Pro / Premium plans — paid tiers "coming soon", no payments. The AI Mentor is Premium and "coming soon".**
 
-Deploying: see [DEPLOYMENT.md](DEPLOYMENT.md) (Supabase + Render).
+Deploying: see [DEPLOYMENT.md](DEPLOYMENT.md) (Supabase + Vercel).
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
@@ -23,7 +23,8 @@ Deploying: see [DEPLOYMENT.md](DEPLOYMENT.md) (Supabase + Render).
 | 11 | Community: social profiles, discovery, guilds, group challenges, opt-in leaderboards, mentorship | Done |
 | 12 | Accounts: Supabase Auth sign-up/sign-in/reset; live community of real members; two-sided mentorship requests with private notes | Done |
 | 13 | Progression map (`/journey`): level & tier path, weekly rings, XP chart with ranges, quest activity matrix, consistency heatmap, life areas & energy map, goal milestone paths, skill paths, weekly/monthly/yearly reviews, achievement rarity & progress, quest result card | Done |
-| — | AI Mentor launch | Not started |
+| 14 | Launch: Vercel deploy, Google sign-in, Free/Pro/Premium tiers with limits and gated features (payments coming soon), database tuning (pooling, indexes, XP rollup), icon system and colour palette, grouped + mobile tab navigation | Done |
+| — | Payments and AI Mentor launch | Not started |
 
 Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
@@ -37,14 +38,42 @@ Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
 `/community`, `/community/guilds`, `/community/guilds/[slug]`,
 `/community/challenges`, `/community/leaderboards` (`?board=&guild=`),
 `/community/mentorship`, `/community/mentorship/[mentorshipId]`, `/community/people/[handle]`,
-`/community/profile`, `/login`, `/auth/confirm`, `/reset-password`,
+`/community/profile`, `/plans`, `/login`, `/auth/confirm`, `/reset-password`,
 `/mentor`, `/api/health`.
+
+## Plans
+
+Three tiers, defined in one place: `src/modules/plans/catalogue.ts` (limits,
+features, display copy, the comparison table).
+
+| | Free | Pro | Premium |
+| --- | --- | --- | --- |
+| Core game: quests, character, skills, journal, challenges, community | ✓ | ✓ | ✓ |
+| Active goals / projects | 3 / 2 | Unlimited | Unlimited |
+| Experiments at a time | 1 | 2 | 2 |
+| Journey map history | 30 days | All time | All time |
+| Insights | — | ✓ | ✓ |
+| AI quests, roadmaps, summaries, insight reports, assessment feedback | — | — | ✓ |
+| AI Mentor | — | — | ✓ (coming soon) |
+
+- **No payments.** Pro and Premium are marked "coming soon" everywhere; the
+  `/plans` page records "notify me" interest (`PlanInterest`) and nothing
+  else. Grant a tier by hand with `npm run plan:set -- <email|handle> <tier>`
+  or by editing `User.plan`.
+- **Limits are enforced in services**, not just hidden in the UI: goal and
+  project creation, reopening and restoring, and experiment starts check the
+  plan and throw the domain error with a friendly message.
+- **AI is per plan.** `aiAllowedFor(userId)` gates every AI call; with no AI
+  provider configured it returns false without touching the database.
+- **Over a limit is never punished.** Nothing is deleted; only starting
+  another is blocked.
 
 ## AI Mentor
 
-**Coming soon.** The `/mentor` page and its nav entry say so; nothing links to
-it. The AI service layer below still powers optional AI in quests, roadmaps,
-reflections and insights when configured.
+**Coming soon, with Premium.** The `/mentor` page and its nav entry say so;
+nothing links to it. The AI service layer below still powers optional AI in
+quests, roadmaps, reflections and insights when configured — for Premium
+accounts only.
 
 Off by default. To turn it on, set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`
 in `.env` (optionally `AI_MODEL`, default `claude-opus-5`). With no key the app
@@ -90,6 +119,8 @@ npm run dev                 # http://localhost:3000
 | `npm test`          | Unit tests (Vitest)                          |
 | `npm run test:integration` | Service tests against the database in `.env` (uses throwaway users) |
 | `npm run db:*`      | `generate`, `migrate`, `deploy`, `seed`, `studio` |
+| `npm run plan:set`  | Grant a plan: `-- friend@example.com pro`; `-- --interest` lists "notify me" sign-ups |
+| `npm run vercel-build` | What Vercel runs: generate, migrate + seed (production only), build |
 
 Health check: `GET /api/health` → `{ status, database: { ok, latencyMs } }`. Public, so it never includes error details (those go to the server log).
 
@@ -189,7 +220,11 @@ with `modules/` usable from anywhere. UI never imports `server/db` or
 - **Progression is auditable.** XP and attribute gains are append-only ledgers
   (`XpTransaction`, `StatTransaction`). Level and tier are derived.
   `XpTransaction` is unique per `(sourceType, sourceId)`, so one action can't
-  award XP twice.
+  award XP twice. `User.totalXp` is a rollup kept by database triggers on the
+  ledger (never written by app code), so reading a total is one row.
+- **Symbols are icons.** Catalogues store an emoji as a symbol key; the UI
+  renders it through `<Glyph>` (`components/common/glyph.tsx`) as a coloured
+  SVG icon, so nothing depends on the device's emoji font.
 - **Single user, multi-user-ready.** Every user-owned row has `userId`.
   `getCurrentUser()` is the only place that decides who the user is.
 - **Identity is data, progression is earned.** The user chooses name, avatar

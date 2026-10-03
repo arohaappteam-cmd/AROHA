@@ -18,7 +18,8 @@ import { WeeklyProgressRings } from "@/components/journey/weekly-progress-rings"
 import { WeeklyReview } from "@/components/journey/weekly-review";
 import { XpProgressChart } from "@/components/journey/xp-progress-chart";
 import { YearlyJourney } from "@/components/journey/yearly-journey";
-import { resolveJourneyRange } from "@/modules/journey/calendar";
+import { DEFAULT_JOURNEY_RANGE, JOURNEY_RANGE_KEYS, resolveJourneyRange } from "@/modules/journey/calendar";
+import { canUseJourneyRange } from "@/modules/plans/catalogue";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getJourney } from "@/server/services/journey.service";
 
@@ -32,8 +33,12 @@ export default async function JourneyPage(props: PageProps<"/journey">) {
   await connection();
   const params = await props.searchParams;
   const user = await getCurrentUser();
+  const requested = resolveJourneyRange(params.range);
+  // Longer history is Pro; a Free link to it falls back to the default range.
+  const range = canUseJourneyRange(user.plan, requested) ? requested : DEFAULT_JOURNEY_RANGE;
+  const lockedRanges = JOURNEY_RANGE_KEYS.filter((key) => !canUseJourneyRange(user.plan, key));
   const journey = await getJourney(user, {
-    range: resolveJourneyRange(params.range),
+    range,
     year: typeof params.year === "string" ? params.year : undefined,
   });
   const hasPrevious = journey.range.previous !== null;
@@ -48,7 +53,7 @@ export default async function JourneyPage(props: PageProps<"/journey">) {
       <WeeklyProgressRings label={journey.month.label} weeks={journey.month.weeks} />
 
       <section id="trends" aria-label="Trends" className="scroll-mt-28 space-y-4">
-        <RangeFilter active={journey.range.key} year={journey.year.year} />
+        <RangeFilter active={journey.range.key} year={journey.year.year} locked={lockedRanges} />
 
         <HudPanel id="xp" index="02" label="XP progression" title="Experience earned" description="Every point comes from something you did — quests, goals, projects, challenges and achievements.">
           <XpProgressChart xp={journey.xp} rangeLabel={journey.range.label.toLowerCase()} />

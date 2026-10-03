@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { displayDay } from "@/modules/analytics/dataset";
 import type { AnalyticsOverview, Momentum } from "@/modules/analytics/overview";
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
+import { Glyph } from "@/components/common/glyph";
 
 const MOMENTUM: Record<Momentum, { label: string; className: string; hint: string }> = {
   moving: { label: "Moving", className: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300", hint: "Progress in 2+ of the last 4 weeks" },
@@ -48,7 +49,7 @@ export function GoalProgressCard({ overview }: { overview: AnalyticsOverview }) 
                 <li key={goal.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Link href={`/goals/${goal.id}`} className="min-w-0 truncate text-sm font-medium underline-offset-4 hover:underline">
-                      <span aria-hidden>{LIFE_AREAS[goal.lifeArea].emoji}</span> {goal.title}
+                      <span aria-hidden><Glyph emoji={LIFE_AREAS[goal.lifeArea].emoji} /></span> {goal.title}
                     </Link>
                     <div className="flex items-center gap-1.5">
                       {goal.isMajor && <Badge variant="outline">Major goal</Badge>}
@@ -158,7 +159,7 @@ export function ChallengeProgressCard({ overview }: { overview: AnalyticsOvervie
                 <li key={challenge.id} className="space-y-1.5">
                   <div className="flex items-center justify-between gap-2 text-sm">
                     <span className="truncate font-medium">
-                      <span aria-hidden>{challenge.emoji}</span> {challenge.title}
+                      <span aria-hidden><Glyph emoji={challenge.emoji} /></span> {challenge.title}
                     </span>
                     <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       {challenge.daysCredited} / {challenge.targetDays} days

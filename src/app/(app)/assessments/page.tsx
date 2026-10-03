@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ASSESSMENT_KIND_LABEL } from "@/modules/assessments/grading";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAssessmentsOverview, type AssessmentListItem } from "@/server/services/assessment.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Assessments" };
 
@@ -44,7 +45,7 @@ function AssessmentCard({ item }: { item: AssessmentListItem }) {
         <CardContent className="flex h-full flex-col gap-2">
           <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              <span aria-hidden>{item.tree.emoji}</span> {item.skill.name}
+              <span aria-hidden><Glyph emoji={item.tree.emoji} /></span> {item.skill.name}
             </span>
             {item.passed ? (
               <span className="flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-300">
@@ -146,7 +147,7 @@ export default async function AssessmentsPage() {
                       href={`/assessments/attempts/${attempt.id}`}
                       className="flex items-center gap-3 py-2.5 hover:bg-muted/30"
                     >
-                      <span aria-hidden>{attempt.skill.tree.emoji}</span>
+                      <span aria-hidden><Glyph emoji={attempt.skill.tree.emoji} /></span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{attempt.title}</p>
                         <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">

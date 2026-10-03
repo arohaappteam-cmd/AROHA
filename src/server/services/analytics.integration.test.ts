@@ -58,7 +58,8 @@ async function addQuest(u: TestUser, offset: number, lifeArea: LifeArea, status:
 }
 
 beforeAll(async () => {
-  const created = await db.user.create({ data: { handle: HANDLE, displayName: "Analytics Tester", timezone: "UTC" } });
+  // Premium, so the AI insight report is allowed.
+  const created = await db.user.create({ data: { handle: HANDLE, displayName: "Analytics Tester", timezone: "UTC", plan: "PREMIUM" } });
   const other = await db.user.create({ data: { handle: `${HANDLE}-stranger`, displayName: "Stranger", timezone: "UTC" } });
   user = { id: created.id, timezone: "UTC" };
   stranger = { id: other.id, timezone: "UTC" };

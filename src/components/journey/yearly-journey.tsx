@@ -5,6 +5,7 @@ import type { JourneyRangeKey } from "@/modules/journey/calendar";
 import type { YearlyJourney as Year } from "@/modules/journey/reviews";
 
 import { HudLabel } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -86,7 +87,7 @@ export function YearlyJourney({ year, range }: { year: Year; range: JourneyRange
                   <ul className="space-y-1">
                     {month.events.slice(0, 3).map((event) => (
                       <li key={event.id} className={cn("flex items-start gap-1.5 text-xs leading-snug", event.major ? "text-foreground" : "text-muted-foreground")}>
-                        <span aria-hidden>{event.emoji}</span>
+                        <span aria-hidden><Glyph emoji={event.emoji} /></span>
                         {event.href ? (
                           <Link href={event.href} className="line-clamp-2 underline-offset-4 hover:underline">
                             {event.title}

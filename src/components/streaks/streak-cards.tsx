@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { StreakState } from "@/modules/streaks/streaks";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -17,7 +18,7 @@ export function StreakCards({ streaks }: { streaks: StreakState[] }) {
             <li key={streak.key} title={streak.description} className={cn("space-y-2 rounded-xl border bg-card p-4", !alive && "border-dashed")}>
               <p className="flex items-center gap-2 text-sm font-medium">
                 <span className="text-lg" aria-hidden>
-                  {streak.emoji}
+                  <Glyph emoji={streak.emoji} />
                 </span>
                 {streak.label}
               </p>

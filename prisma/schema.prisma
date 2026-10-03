@@ -4,9 +4,13 @@
 // - The backend owns authoritative game state. AI output is never written
 //   directly into progression tables.
 // - Progression is auditable: XP and stat gains are append-only transactions.
-//   Level, totals and character tier are derived, never stored as bare numbers.
-// - Single user for now, but every user-owned row carries `userId` so real
-//   accounts can be introduced without reshaping the schema.
+//   Level, totals and character tier are derived, never written by the app.
+//   The one stored total, User.totalXp, is a rollup the database maintains
+//   itself with triggers on XpTransaction (see the performance_and_plans
+//   migration) — app code only ever reads it.
+// - Every user-owned row carries `userId`, and every foreign key the app
+//   joins, filters or cascades on is indexed (Postgres doesn't index foreign
+//   keys on its own).
 
 generator client {
   provider = "prisma-client"
@@ -270,6 +274,14 @@ enum ExperimentDecision {
 
 // ─── Identity ───────────────────────────────────────────────────────────────
 
+/// Subscription tier. What each tier includes lives in src/modules/plans.
+/// Payments aren't live yet: tiers are granted by hand (npm run plan:set).
+enum PlanTier {
+  FREE
+  PRO
+  PREMIUM
+}
+
 /// How much of the user's record the community layer may show. Nothing is
 /// shared until the user chooses it (spec §44).
 enum SocialVisibility {
@@ -309,6 +321,13 @@ model User {
   /// First time the user saved their own profile details.
   profileSavedAt DateTime?
   onboardedAt    DateTime?
+  plan           PlanTier  @default(FREE)
+  /// When `plan` last changed.
+  planUpdatedAt  DateTime?
+  /// Sum of this user's XpTransaction amounts. Maintained by database
+  /// triggers in the same transaction as each ledger write; never written by
+  /// app code. Saves summing the whole ledger on every page.
+  totalXp        Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -340,6 +359,21 @@ model User {
   /// Mentorships other members asked this user for, or offered them.
   mentorshipsWith  Mentorship[]          @relation("MentorshipCounterpart")
   mentorshipNotes  MentorshipMessage[]
+  planInterests    PlanInterest[]
+}
+
+/// "Tell me when it launches" for a paid tier. One row per user per tier, so
+/// the owner can see who's waiting before payments exist.
+model PlanInterest {
+  id        String   @id @default(cuid())
+  userId    String
+  tier      PlanTier
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tier])
+  @@index([tier, createdAt])
 }
 
 /// The user's living AROHA character (spec §7, §30). Holds game-facing
@@ -590,6 +624,9 @@ model Quest {
   @@unique([dailyQuestSetId, slot])
   @@index([userId, status])
   @@index([userId, templateKey])
+  // Goal analytics join on these, and deleting a goal or mission nulls them.
+  @@index([goalId])
+  @@index([missionId])
 }
 
 model QuestCompletion {
@@ -744,6 +781,8 @@ model SkillXpTransaction {
   @@unique([skillId, sourceType, sourceId])
   @@index([userId, createdAt])
   @@index([userId, skillId])
+  /// Award and revoke look a source up by owner before writing.
+  @@index([userId, sourceType, sourceId])
 }
 
 // ─── Projects, evidence & assessments (spec §19–21, §25) ────────────────────
@@ -820,6 +859,7 @@ model Evidence {
 
   @@index([userId, createdAt])
   @@index([projectId])
+  @@index([attemptId])
 }
 
 /// One submitted, evaluated assessment. The definition is snapshotted, so
@@ -860,6 +900,7 @@ model AssessmentAttempt {
   @@index([userId, createdAt])
   @@index([userId, skillId])
   @@index([userId, assessmentKey])
+  @@index([projectId])
 }
 
 // ─── Achievements & streaks (spec §17–18) ───────────────────────────────────
@@ -1039,6 +1080,7 @@ model Experiment {
   days ExperimentDay[]
 
   @@index([userId, status])
+  @@index([goalId])
 }
 
 /// One practice day, earned by completing that day's experiment quest.
@@ -1112,6 +1154,7 @@ model GroupChallengeEntry {
 
   @@unique([userId, groupKey])
   @@index([groupKey])
+  @@index([challengeId])
 }
 
 /// A mentorship between the user and a community member. `counterpartHandle`
@@ -1158,4 +1201,6 @@ model MentorshipMessage {
   author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([mentorshipId, createdAt])
+  /// The per-author rate limit counts recent notes.
+  @@index([authorId, createdAt])
 }

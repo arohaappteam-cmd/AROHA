@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ATTRIBUTES } from "@/modules/progression/attributes";
 import type { ProgressionOutcome } from "@/modules/progression/outcome";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * The level-up moment. Shown over the page after a completion that crossed a
@@ -73,7 +74,7 @@ export function LevelUpCelebration({ outcome, onClose }: { outcome: ProgressionO
                 const meta = ATTRIBUTES.find((a) => a.key === award.attribute);
                 return (
                   <li key={award.attribute} className="rounded-full bg-muted px-3 py-1 text-sm">
-                    <span aria-hidden>{meta?.emoji} </span>
+                    <span aria-hidden><Glyph emoji={meta?.emoji} /> </span>
                     {meta?.label ?? award.attribute} +{award.amount}
                   </li>
                 );

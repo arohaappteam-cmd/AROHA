@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SkillHistoryEntry } from "@/server/services/skill.service";
+import { Glyph } from "@/components/common/glyph";
 
 const dateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" });
 
@@ -23,7 +24,7 @@ export function SkillHistoryCard({ entries, scoped = false }: { entries: SkillHi
             {entries.map((entry) => (
               <li key={entry.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                 <span className="text-lg" aria-hidden>
-                  {entry.tree.emoji}
+                  <Glyph emoji={entry.tree.emoji} />
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm">

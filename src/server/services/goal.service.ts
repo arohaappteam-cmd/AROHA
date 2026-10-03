@@ -11,6 +11,7 @@ import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
 import { roadmapRepository } from "@/server/repositories/roadmap.repository";
 import { checkAchievements } from "@/server/services/achievement.service";
+import { aiAllowedFor, planLimitMessage } from "@/server/services/plan.service";
 
 /** Business-rule failures that are safe to show to the user. */
 export class GoalError extends Error {
@@ -21,11 +22,28 @@ export class GoalError extends Error {
 }
 
 /**
- * The generator used for new roadmaps. AI-backed when configured, templates
- * otherwise; either way the output passes through the same validation.
+ * The generator used for new roadmaps. AI-backed when configured and the
+ * user's plan includes AI, templates otherwise; either way the output passes
+ * through the same validation.
  */
-function roadmapGenerator(): RoadmapGenerator {
-  return selectRoadmapGenerator();
+async function roadmapGenerator(userId: string): Promise<RoadmapGenerator> {
+  return selectRoadmapGenerator(await aiAllowedFor(userId));
+}
+
+/** Goals that count toward the plan's limit: not archived, not completed. */
+function countActiveGoals(userId: string) {
+  return db.goal.count({ where: { userId, archivedAt: null, status: { not: "COMPLETED" } } });
+}
+
+/** Null while another goal fits the user's plan; otherwise why it doesn't. */
+export function goalLimitMessage(userId: string): Promise<string | null> {
+  return planLimitMessage(userId, "activeGoals", () => countActiveGoals(userId));
+}
+
+/** Refuses to bring one more goal into play beyond the plan's limit. */
+async function assertGoalRoom(userId: string) {
+  const message = await goalLimitMessage(userId);
+  if (message) throw new GoalError(message);
 }
 
 function toGoalData(input: GoalInput) {
@@ -50,7 +68,8 @@ async function requireGoal(userId: string, goalId: string, { writable = true } =
 // ─── Goals ──────────────────────────────────────────────────────────────────
 
 export async function createGoal(userId: string, input: GoalInput & { generateRoadmap: boolean }) {
-  const existing = await db.goal.count({ where: { userId, archivedAt: null, status: { not: "COMPLETED" } } });
+  await assertGoalRoom(userId);
+  const existing = await countActiveGoals(userId);
   const goal = await db.goal.create({
     data: {
       userId,
@@ -80,6 +99,7 @@ export async function transitionGoal(userId: string, goalId: string, transition:
   if (!canTransition(goal.status, transition)) {
     throw new GoalError(`You can't ${transition} a goal that is ${goal.status.toLowerCase()}`);
   }
+  if (transition === "reopen") await assertGoalRoom(userId);
   const updated = await db.goal.update({ where: { id: goalId }, data: applyTransition(goal.status, transition, new Date()) });
 
   if (transition === "complete") {
@@ -94,7 +114,9 @@ export async function transitionGoal(userId: string, goalId: string, transition:
 }
 
 export async function setArchived(userId: string, goalId: string, archived: boolean) {
-  await requireGoal(userId, goalId, { writable: false });
+  const goal = await requireGoal(userId, goalId, { writable: false });
+  // Restoring an unfinished goal brings it back into play.
+  if (!archived && goal.archivedAt && goal.status !== "COMPLETED") await assertGoalRoom(userId);
   return db.goal.update({ where: { id: goalId }, data: { archivedAt: archived ? new Date() : null } });
 }
 
@@ -132,7 +154,7 @@ export async function generateRoadmap(userId: string, goalId: string, { replace 
     interests: interests.map((interest) => interest.label),
   };
 
-  const generator = roadmapGenerator();
+  const generator = await roadmapGenerator(userId);
   const generated = await generator.generate(context);
   // Never trust a generator's output shape — AI or otherwise.
   const draft = roadmapDraftSchema.parse(generated.draft);

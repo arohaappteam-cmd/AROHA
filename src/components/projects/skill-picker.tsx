@@ -5,6 +5,7 @@ import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MAX_PROJECT_SKILLS } from "@/modules/projects/status";
 import type { SkillOptionTree } from "@/server/services/project.service";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * Pick the skills a project really uses. Trees suggested by the category open
@@ -21,7 +22,7 @@ export function SkillPicker({
   onChange: (next: string[]) => void;
   suggestedTrees: readonly string[];
 }) {
-  const nameById = new Map(trees.flatMap((tree) => tree.skills.map((skill) => [skill.id, `${tree.emoji} ${skill.name}`] as const)));
+  const nameById = new Map(trees.flatMap((tree) => tree.skills.map((skill) => [skill.id, skill.name] as const)));
   const full = selected.length >= MAX_PROJECT_SKILLS;
   const toggle = (id: string) =>
     onChange(selected.includes(id) ? selected.filter((value) => value !== id) : full ? selected : [...selected, id]);
@@ -57,7 +58,7 @@ export function SkillPicker({
           return (
             <details key={tree.slug} open={suggestedTrees.includes(tree.slug)} className="group rounded-lg border">
               <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium select-none">
-                <span aria-hidden>{tree.emoji}</span>
+                <span aria-hidden><Glyph emoji={tree.emoji} /></span>
                 {tree.name}
                 {count > 0 && <span className="rounded-full bg-primary/15 px-1.5 text-xs text-primary tabular-nums">{count}</span>}
                 {suggestedTrees.includes(tree.slug) && (

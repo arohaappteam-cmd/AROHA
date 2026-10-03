@@ -77,7 +77,7 @@ export async function reviewExperimentAction(input: unknown): Promise<ActionResu
     message: [
       "Review saved",
       outcome.xpAwarded > 0 ? `+${outcome.xpAwarded} XP` : null,
-      ...outcome.achievements.map((achievement) => `${achievement.emoji} ${achievement.name}`),
+      ...outcome.achievements.map((achievement) => `Achievement: ${achievement.name}`),
     ]
       .filter(Boolean)
       .join(" · "),

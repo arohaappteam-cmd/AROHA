@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { SkillTreeCard as SkillTreeCardData } from "@/server/services/skill.service";
+import { Glyph } from "@/components/common/glyph";
 
 /** One tree on the skills overview: where you are, and what opens next. */
 export function SkillTreeCard({ tree }: { tree: SkillTreeCardData }) {
@@ -20,7 +21,7 @@ export function SkillTreeCard({ tree }: { tree: SkillTreeCardData }) {
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-2">
             <span className="text-xl" aria-hidden>
-              {tree.emoji}
+              <Glyph emoji={tree.emoji} />
             </span>
             {tree.name}
             <span className="ml-auto text-xs font-normal text-muted-foreground tabular-nums">

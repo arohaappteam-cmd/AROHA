@@ -1,6 +1,11 @@
 import "server-only";
 
 import { db } from "@/server/db";
+import { cachedCatalogue } from "@/server/db/catalogue-cache";
+
+const loadSkillCatalogue = cachedCatalogue(() =>
+  db.skill.findMany({ select: { id: true, name: true, maxLevel: true, baseXp: true, tree: { select: { slug: true } } } }),
+);
 
 /**
  * Batch reads behind the live community directory. Each runs once per
@@ -51,7 +56,8 @@ export const communityRepository = {
     const users = { in: userIds };
 
     const [total, recent, previous, quests, achievements, challenges] = await Promise.all([
-      db.xpTransaction.groupBy({ by: ["userId"], where: { userId: users }, _sum: { amount: true } }),
+      // Lifetime totals come from the rollup, not a scan of every ledger row.
+      db.user.findMany({ where: { id: users }, select: { id: true, totalXp: true } }),
       db.xpTransaction.groupBy({ by: ["userId"], where: { userId: users, createdAt: { gte: recentFrom } }, _sum: { amount: true } }),
       db.xpTransaction.groupBy({
         by: ["userId"],
@@ -64,7 +70,7 @@ export const communityRepository = {
     ]);
 
     return {
-      totalXp: toSums(total),
+      totalXp: new Map(total.map((row) => [row.id, row.totalXp])),
       xpRecent: toSums(recent),
       xpPrevious: toSums(previous),
       questsRecent: toCounts(quests),
@@ -77,7 +83,7 @@ export const communityRepository = {
   async skillXp(userIds: string[]) {
     const [rows, skills] = await Promise.all([
       db.skillXpTransaction.groupBy({ by: ["userId", "skillId"], where: { userId: { in: userIds } }, _sum: { amount: true } }),
-      db.skill.findMany({ select: { id: true, name: true, maxLevel: true, baseXp: true, tree: { select: { slug: true } } } }),
+      loadSkillCatalogue(),
     ]);
     return { rows: rows.map((row) => ({ userId: row.userId, skillId: row.skillId, xp: row._sum.amount ?? 0 })), skills };
   },

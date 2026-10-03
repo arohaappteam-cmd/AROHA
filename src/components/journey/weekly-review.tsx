@@ -3,6 +3,7 @@ import { formatDay } from "@/modules/journey/calendar";
 import type { WeeklyReview as Review } from "@/modules/journey/reviews";
 
 import { Delta, HudLabel } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -68,7 +69,7 @@ export function WeeklyReview({ review }: { review: Review }) {
           {review.areas.map((area) => (
             <li key={area.lifeArea} className="grid grid-cols-[1.5rem_minmax(0,1fr)_4.5rem] items-center gap-2">
               <span aria-hidden className="text-base">
-                {area.emoji}
+                <Glyph emoji={area.emoji} />
               </span>
               <div className="min-w-0 space-y-1">
                 <p className="truncate font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">{area.label}</p>
@@ -103,7 +104,7 @@ export function WeeklyReview({ review }: { review: Review }) {
               {review.achievements.map((achievement) => (
                 <li key={achievement.slug} className="flex items-center gap-2 text-sm">
                   <span aria-hidden className="text-lg">
-                    {achievement.emoji}
+                    <Glyph emoji={achievement.emoji} />
                   </span>
                   <span className="font-medium">{achievement.name}</span>
                   <span className="font-mono text-[10px] tracking-[0.16em] text-muted-foreground uppercase">{RARITY_LABEL[achievement.rarity]}</span>

@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 
 /**
  * What `/api/health` tells the world: whether the app can reach its database,
- * and nothing else. The endpoint is public (Render's health check calls it),
+ * and nothing else. The endpoint is public (uptime monitors call it),
  * so failure details go to the server log, never into the response.
  */
 export type HealthReport = {

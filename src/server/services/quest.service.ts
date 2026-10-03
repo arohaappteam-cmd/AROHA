@@ -21,6 +21,7 @@ import { questXpReward } from "@/modules/quests/rewards";
 import type { CompleteQuestInput, ReflectionInput } from "@/modules/quests/schemas";
 import { can, type QuestAction } from "@/modules/quests/status";
 import { selectQuestGenerator } from "@/server/ai/quest-generator";
+import { aiAllowedFor } from "@/server/services/plan.service";
 import { progression } from "@/server/progression/port";
 import { goalRepository } from "@/server/repositories/goal.repository";
 import { identityRepository } from "@/server/repositories/identity.repository";
@@ -44,12 +45,12 @@ export class QuestError extends Error {
 const RECENT_DAYS = 3;
 
 /**
- * The generator for new days. AI-backed when configured, deterministic
- * otherwise; either way, drafts pass the same validation and XP is priced
+ * The generator for new days. AI-backed when configured and the user's plan
+ * includes AI, deterministic otherwise; either way, drafts pass the same validation and XP is priced
  * here (spec §6 — the backend owns progression).
  */
-function questGenerator(): QuestGenerator {
-  return selectQuestGenerator();
+async function questGenerator(userId: string): Promise<QuestGenerator> {
+  return selectQuestGenerator(await aiAllowedFor(userId));
 }
 
 function price(draft: QuestDraft, sortOrder: number): PricedDraft {
@@ -179,7 +180,7 @@ export async function ensureTodaySet(user: Pick<User, "id" | "timezone">) {
   }
 
   const context = await buildContext(user, today, "NORMAL");
-  const generated = await questGenerator().generateDay(context);
+  const generated = await (await questGenerator(user.id)).generateDay(context);
   const drafts = generated.drafts.map((draft) => price(draft, sortOrderFor(draft.slot)));
 
   try {
@@ -362,7 +363,7 @@ export async function swapQuest(user: Pick<User, "id" | "timezone">, questId: st
   const others = set?.quests.filter((q) => q.id !== quest.id) ?? [];
 
   const context = await buildContext(user, formatDateOnly(quest.dailyQuestSet!.date), quest.dailyQuestSet!.energy);
-  const draft = await questGenerator().generateSlot(context, quest.slot as QuestSlot, {
+  const draft = await (await questGenerator(user.id)).generateSlot(context, quest.slot as QuestSlot, {
     nonce: quest.swapCount + 1,
     excludeTemplateKeys: [quest.templateKey],
     avoidTags: others.flatMap((q) => tagsOf(q.templateKey)),
@@ -384,7 +385,7 @@ export async function setDayEnergy(user: Pick<User, "id" | "timezone">, energy: 
   if (set.energy === energy) return;
 
   const context = await buildContext(user, today, energy);
-  const generated = await questGenerator().generateDay(context);
+  const generated = await (await questGenerator(user.id)).generateDay(context);
   const byslot = new Map(generated.drafts.map((d) => [d.slot, d]));
   const untouched = (q: (typeof set.quests)[number]) =>
     q.status === "PENDING" && !q.startedAt && !q.carriedFromId && q.swapCount === 0;

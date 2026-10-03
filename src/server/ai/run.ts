@@ -15,13 +15,15 @@ export type AIResult<T> = { value: T; source: AISource };
  * network error, a refusal, or schema-invalid output.
  *
  * `source` lets callers show whether a result came from the model or the
- * built-in fallback.
+ * built-in fallback. `allowed: false` (the user's plan doesn't include AI)
+ * goes straight to the fallback.
  */
 export async function aiOrFallback<TSchema extends z.ZodType>(
   request: StructuredRequest<TSchema>,
   fallback: () => Promise<z.infer<TSchema>> | z.infer<TSchema>,
+  { allowed = true }: { allowed?: boolean } = {},
 ): Promise<AIResult<z.infer<TSchema>>> {
-  const provider = getAIProvider();
+  const provider = allowed ? getAIProvider() : undefined;
   if (provider) {
     try {
       const value = await generateStructured(provider, request);

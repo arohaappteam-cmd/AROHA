@@ -27,8 +27,12 @@ export type RubricSubmission = {
  * AI-assisted rubric evaluation. Returns null whenever AI isn't usable or its
  * output doesn't score exactly the rubric — callers fall back to self-review.
  */
-export async function evaluateWithAI(definition: RubricDefinition, submission: RubricSubmission): Promise<Evaluation | null> {
-  const provider = getAIProvider();
+export async function evaluateWithAI(
+  definition: RubricDefinition,
+  submission: RubricSubmission,
+  { allowAI = true }: { allowAI?: boolean } = {},
+): Promise<Evaluation | null> {
+  const provider = allowAI ? getAIProvider() : undefined;
   if (!provider) return null;
 
   try {

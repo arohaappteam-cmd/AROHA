@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ATTRIBUTES } from "@/modules/progression/attributes";
 import type { DashboardData } from "@/server/services/dashboard.service";
+import { Glyph } from "@/components/common/glyph";
 
 /** Bars are relative to the strongest attribute, with a floor so early
  *  progress doesn't look maxed out. Progression indicators, not measurements. */
@@ -29,7 +30,7 @@ export function AttributesCard({ attributes }: { attributes: DashboardData["attr
             return (
               <li key={meta.key} title={meta.description} className="space-y-1">
                 <div className="flex items-baseline gap-2 text-sm">
-                  <span aria-hidden>{meta.emoji}</span>
+                  <span aria-hidden><Glyph emoji={meta.emoji} /></span>
                   <span className="flex-1 truncate">{meta.label}</span>
                   <span className="font-medium tabular-nums">{total}</span>
                 </div>

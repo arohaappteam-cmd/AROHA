@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { displayDateOnly } from "@/modules/goals/dates";
 import { abandonChallengeAction } from "@/server/actions/challenge.actions";
 import type { ChallengeView } from "@/server/services/challenge.service";
+import { Glyph } from "@/components/common/glyph";
 
 const STATUS_LABEL: Record<Exclude<ChallengeView["status"], "ACTIVE">, string> = {
   COMPLETED: "Completed",
@@ -26,7 +27,7 @@ export function ChallengeCard({ challenge }: { challenge: ChallengeView }) {
     <div className={cn("space-y-3 rounded-xl border bg-card p-4", !active && "opacity-90")}>
       <div className="flex items-start gap-3">
         <span className="text-2xl" aria-hidden>
-          {challenge.emoji}
+          <Glyph emoji={challenge.emoji} />
         </span>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-2 font-medium">

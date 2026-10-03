@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { TIMELINE_KIND_META, TIMELINE_KINDS, type TimelineKind } from "@/modules/timeline/timeline";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getLifeTimeline } from "@/server/services/timeline.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Life timeline" };
 
@@ -92,7 +93,7 @@ export default async function TimelinePage(props: PageProps<"/journey/timeline">
                     {year.highlights.slice(0, 8).map((event) => (
                       <li key={event.id} className="flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 py-1 pr-3 pl-1.5 text-sm">
                         <span className="grid size-6 place-items-center rounded-full bg-card" aria-hidden>
-                          {event.emoji}
+                          <Glyph emoji={event.emoji} />
                         </span>
                         {event.title}
                       </li>
@@ -123,7 +124,7 @@ export default async function TimelinePage(props: PageProps<"/journey/timeline">
                                 event.major ? "top-0 size-7 border-primary/50 text-sm shadow-sm" : "top-0.5 size-6 text-xs",
                               )}
                             >
-                              {event.emoji}
+                              <Glyph emoji={event.emoji} />
                             </span>
                             {event.href ? (
                               <Link href={event.href} className="block rounded-lg hover:underline">

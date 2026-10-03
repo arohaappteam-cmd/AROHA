@@ -31,7 +31,8 @@ const practical = findCatalogueAssessment("practical.programming.fundamentals") 
 const ratingsOf = (value: number) => Object.fromEntries(practical.criteria.map((criterion) => [criterion.key, value]));
 
 beforeAll(async () => {
-  const user = await db.user.create({ data: { handle: HANDLE, displayName: "Proof Tester", timezone: "UTC" } });
+  // Premium, so AI rubric evaluation is allowed.
+  const user = await db.user.create({ data: { handle: HANDLE, displayName: "Proof Tester", timezone: "UTC", plan: "PREMIUM" } });
   userId = user.id;
   await projects.listSkillOptions(); // syncs the skill catalogue
   fundamentalsId = (await db.skill.findUniqueOrThrow({ where: { slug: "programming.fundamentals" } })).id;

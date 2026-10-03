@@ -12,6 +12,7 @@ import { formatDay } from "@/modules/journey/calendar";
 import type { ActivityCell, ActivityGrid, ActivityRow, CellState } from "@/modules/journey/progress";
 
 import { Meter } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const STATE_TEXT: Record<CellState, string> = {
   done: "all done",
@@ -81,7 +82,7 @@ export function QuestActivityGrid({ grid }: { grid: ActivityGrid }) {
     <th scope="row" className="pr-2 text-left font-normal">
       <span className="flex items-center gap-2 text-xs">
         <span aria-hidden className="text-base leading-none">
-          {row.emoji}
+          <Glyph emoji={row.emoji} />
         </span>
         <span className="hidden font-mono tracking-[0.12em] text-muted-foreground uppercase sm:inline">{row.label}</span>
         <span className="sr-only sm:hidden">{row.label}</span>
@@ -203,7 +204,7 @@ export function QuestActivityGrid({ grid }: { grid: ActivityGrid }) {
                     >
                       <Icon className="size-3.5" />
                     </span>
-                    <span aria-hidden>{LIFE_AREAS[quest.lifeArea].emoji}</span>
+                    <span aria-hidden><Glyph emoji={LIFE_AREAS[quest.lifeArea].emoji} /></span>
                     <Link href={`/quests/${quest.id}`} className={cn("min-w-0 flex-1 truncate text-sm underline-offset-4 hover:underline", !done && "text-muted-foreground")}>
                       {quest.title}
                     </Link>

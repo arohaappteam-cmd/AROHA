@@ -33,7 +33,7 @@ export default async function GuildPage(props: PageProps<"/community/guilds/[slu
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow={`${guild.emoji} ${LIFE_AREAS[guild.lifeArea].label} guild`}
+        eyebrow={`${LIFE_AREAS[guild.lifeArea].label} guild`}
         title={guild.name}
         description={guild.description}
         actions={<GuildMembershipButton slug={guild.slug} joined={detail.joined} size="default" />}

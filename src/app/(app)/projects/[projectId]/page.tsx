@@ -13,6 +13,7 @@ import { PROJECT_ASSESSMENT_PREFIX } from "@/modules/assessments/catalogue";
 import { PROJECT_CATEGORIES } from "@/modules/projects/categories";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getProject } from "@/server/services/project.service";
+import { Glyph } from "@/components/common/glyph";
 
 export async function generateMetadata(props: PageProps<"/projects/[projectId]">): Promise<Metadata> {
   const { projectId } = await props.params;
@@ -42,7 +43,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[projectId
       <header className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>
-            <span aria-hidden>{category.emoji}</span> {category.label}
+            <span aria-hidden><Glyph emoji={category.emoji} /></span> {category.label}
           </span>
           <ProjectStatusChip status={project.status} />
           {completed && project.completedAt && <span>Finished {dateFormat.format(project.completedAt)}</span>}
@@ -112,7 +113,7 @@ export default async function ProjectPage(props: PageProps<"/projects/[projectId
               <ul className="divide-y">
                 {project.skills.map(({ skill }) => (
                   <li key={skill.id} className="flex items-center gap-3 py-2 first:pt-0 last:pb-0">
-                    <span aria-hidden>{skill.tree.emoji}</span>
+                    <span aria-hidden><Glyph emoji={skill.tree.emoji} /></span>
                     <div className="min-w-0 flex-1">
                       <Link href={`/skills/${skill.tree.slug}`} className="text-sm font-medium hover:underline">
                         {skill.name}

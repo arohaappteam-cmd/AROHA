@@ -11,6 +11,8 @@ import {
 import type { TierTitle } from "@/modules/progression/levels";
 import { cn } from "@/lib/utils";
 
+import { glyphFor } from "../common/glyph";
+
 const CENTER = 60;
 const RING_RADII = [52, 56.5, 59] as const;
 
@@ -70,7 +72,10 @@ export function CharacterAvatar({
   // which may sit inside a hidden (display:none) copy and never paint.
   const id = `av${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const fill = `url(#${id}-fill)`;
-  const label = appearance.style === "MONOGRAM" ? initialsFor(name) : AVATAR_EMBLEMS[appearance.emblem].glyph;
+  const monogram = appearance.style === "MONOGRAM";
+  const label = initialsFor(name);
+  const Emblem = glyphFor(AVATAR_EMBLEMS[appearance.emblem].glyph).icon;
+  const emblemY = appearance.style === "CREST" ? 62 : CENTER;
 
   return (
     <svg
@@ -123,18 +128,22 @@ export function CharacterAvatar({
 
       <BaseShape style={appearance.style} fill={fill} />
 
-      <text
-        x={CENTER}
-        y={appearance.style === "CREST" ? 62 : CENTER}
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={appearance.style === "MONOGRAM" ? (label.length > 1 ? 30 : 36) : 34}
-        fontWeight={600}
-        fill="white"
-        style={{ fontFamily: "var(--font-sans), system-ui, sans-serif" }}
-      >
-        {label}
-      </text>
+      {monogram ? (
+        <text
+          x={CENTER}
+          y={CENTER}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={label.length > 1 ? 30 : 36}
+          fontWeight={600}
+          fill="white"
+          style={{ fontFamily: "var(--font-sans), system-ui, sans-serif" }}
+        >
+          {label}
+        </text>
+      ) : (
+        <Emblem x={CENTER - 17} y={emblemY - 17} width={34} height={34} color="white" strokeWidth={1.75} aria-hidden />
+      )}
     </svg>
   );
 }

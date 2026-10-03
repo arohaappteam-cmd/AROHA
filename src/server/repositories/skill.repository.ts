@@ -3,6 +3,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import type { XpSourceType } from "@/generated/prisma/enums";
 import { db } from "@/server/db";
+import { cachedCatalogue } from "@/server/db/catalogue-cache";
 
 /**
  * Data access for the skill system. Reads serve the tree views; writes keep
@@ -21,12 +22,24 @@ export type SkillAward = {
   reason: string;
 };
 
+// Catalogue reads: identical for every user, and only a deploy changes them.
+const loadTrees = cachedCatalogue(() =>
+  db.skillTree.findMany({
+    orderBy: [{ sortOrder: "asc" }, { slug: "asc" }],
+    include: { skills: { orderBy: skillOrder } },
+  }),
+);
+
+const loadAllSkills = cachedCatalogue(() =>
+  db.skill.findMany({
+    orderBy: [{ tree: { sortOrder: "asc" } }, { order: "asc" }, { slug: "asc" }],
+    select: { id: true, slug: true, name: true, parentId: true, tree: { select: { slug: true, name: true, emoji: true } } },
+  }),
+);
+
 export const skillRepository = {
   listTrees() {
-    return db.skillTree.findMany({
-      orderBy: [{ sortOrder: "asc" }, { slug: "asc" }],
-      include: { skills: { orderBy: skillOrder } },
-    });
+    return loadTrees();
   },
 
   findTree(slug: string) {
@@ -72,10 +85,7 @@ export const skillRepository = {
 
   /** Every skill with its tree, for pickers. */
   listAllSkills() {
-    return db.skill.findMany({
-      orderBy: [{ tree: { sortOrder: "asc" } }, { order: "asc" }, { slug: "asc" }],
-      select: { id: true, slug: true, name: true, parentId: true, tree: { select: { slug: true, name: true, emoji: true } } },
-    });
+    return loadAllSkills();
   },
 
   /**

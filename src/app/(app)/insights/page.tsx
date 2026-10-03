@@ -7,11 +7,13 @@ import { Suspense } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
 import { InsightReportSkeleton, InsightReportView } from "@/components/insights/insight-report";
+import { LockedFeature } from "@/components/plans/locked-feature";
 import { ChallengeProgressCard, GoalProgressCard, SkillProgressCard } from "@/components/insights/progress-cards";
 import { RangeTabs } from "@/components/insights/range-tabs";
 import { LifeAreaCard, QuestTrendCard, StatTotals, XpTrendCard } from "@/components/insights/trend-cards";
 import { buttonVariants } from "@/components/ui/button";
 import { resolveRange } from "@/modules/analytics/dataset";
+import { hasFeature } from "@/modules/plans/catalogue";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAnalytics, getInsightReport, type Analytics } from "@/server/services/analytics.service";
 
@@ -25,9 +27,27 @@ async function InsightReportSection({ analytics }: { analytics: Analytics }) {
 
 export default async function InsightsPage(props: PageProps<"/insights">) {
   await connection();
+  const user = await getCurrentUser();
+  if (!hasFeature(user.plan, "insights")) {
+    return (
+      <div className="space-y-6">
+        <PageHeader eyebrow="Insights" title="Your trends and patterns" />
+        <LockedFeature
+          tier="PRO"
+          title="See how your growth is really going"
+          description="Insights turns your own quests, goals and skills into trends you can act on. It's part of Pro, which is coming soon."
+          points={[
+            "Quest and XP trends over 4, 12 or 26 weeks",
+            "Life-area balance — where your effort goes",
+            "Goal momentum: what's moving and what's stalled",
+            "Patterns, each backed by the days behind it",
+          ]}
+        />
+      </div>
+    );
+  }
   const { range: rangeParam } = await props.searchParams;
   const range = resolveRange(rangeParam);
-  const user = await getCurrentUser();
   const analytics = await getAnalytics(user, range);
   const { overview } = analytics;
 

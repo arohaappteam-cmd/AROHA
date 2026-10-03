@@ -1,4 +1,5 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -26,14 +27,34 @@ export function connectionOptions(connectionString: string) {
   return { connectionString: url.toString(), ssl };
 }
 
+export type PoolSettings = {
+  /** Most connections this process holds open at once. */
+  max?: number;
+  /** Close a connection after it has sat unused this long. */
+  idleTimeoutMillis?: number;
+};
+
+/**
+ * A node-postgres pool sized for serverless. On Vercel, many function
+ * instances each hold their own pool, so `max` stays small and idle
+ * connections close quickly; Supabase's transaction pooler (port 6543)
+ * multiplexes them onto a few real Postgres connections. Statements are
+ * left unnamed (no `statementNameGenerator`), which a transaction pooler
+ * requires.
+ */
+export function createPool(connectionString: string, settings: PoolSettings = {}): pg.Pool {
+  return new pg.Pool({
+    ...connectionOptions(connectionString),
+    max: settings.max ?? 10,
+    idleTimeoutMillis: settings.idleTimeoutMillis ?? 10_000,
+    connectionTimeoutMillis: 5_000,
+  });
+}
+
 /**
  * Builds a Prisma client over the node-postgres driver adapter.
  * Kept free of `server-only` so CLI scripts (seed) can reuse it.
  */
-export function createPrismaClient(connectionString: string): PrismaClient {
-  const adapter = new PrismaPg({
-    ...connectionOptions(connectionString),
-    connectionTimeoutMillis: 5_000,
-  });
-  return new PrismaClient({ adapter });
+export function createPrismaClient(connectionString: string, pool: pg.Pool = createPool(connectionString)): PrismaClient {
+  return new PrismaClient({ adapter: new PrismaPg(pool) });
 }

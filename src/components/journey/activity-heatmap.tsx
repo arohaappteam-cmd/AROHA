@@ -8,6 +8,7 @@ import { formatDay } from "@/modules/journey/calendar";
 import { HEATMAP_METRICS, heatLevel, type Heatmap, type HeatmapMetric } from "@/modules/journey/progress";
 
 import { HudLabel } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const LEVEL_CLASS = ["bg-muted", "bg-heat-1", "bg-heat-2", "bg-heat-3", "bg-heat-4"] as const;
 const ROW_LABELS = ["Mon", "", "Wed", "", "Fri", "", ""] as const;
@@ -55,7 +56,7 @@ export function ActivityHeatmap({ heatmap }: { heatmap: Heatmap }) {
               entry === metric ? "border-foreground bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {entry !== "ALL" && <span aria-hidden>{LIFE_AREAS[entry].emoji} </span>}
+            {entry !== "ALL" && <span aria-hidden><Glyph emoji={LIFE_AREAS[entry].emoji} /> </span>}
             {metricLabel(entry)}
           </button>
         ))}

@@ -23,7 +23,10 @@ export const AVATAR_COLORS = {
 export type AvatarColor = keyof typeof AVATAR_COLORS;
 export const AVATAR_COLOR_KEYS = Object.keys(AVATAR_COLORS) as [AvatarColor, ...AvatarColor[]];
 
-/** Emblems are stored by key so the glyph can change without a migration. */
+/**
+ * Emblems are stored by key so the symbol can change without a migration.
+ * `glyph` names the symbol; the UI draws it as an icon (components/common/glyph).
+ */
 export const AVATAR_EMBLEMS = {
   sprout: { label: "Sprout", glyph: "🌱" },
   flame: { label: "Flame", glyph: "🔥" },
@@ -41,9 +44,9 @@ export const AVATAR_EMBLEMS = {
   tools: { label: "Tools", glyph: "🛠️" },
   leaf: { label: "Leaf", glyph: "🍃" },
   gem: { label: "Gem", glyph: "💎" },
-  owl: { label: "Owl", glyph: "🦉" },
-  wolf: { label: "Wolf", glyph: "🐺" },
-  eagle: { label: "Eagle", glyph: "🦅" },
+  owl: { label: "Feather", glyph: "🦉" },
+  wolf: { label: "Paw", glyph: "🐺" },
+  eagle: { label: "Bird", glyph: "🦅" },
   planet: { label: "Planet", glyph: "🪐" },
 } as const;
 

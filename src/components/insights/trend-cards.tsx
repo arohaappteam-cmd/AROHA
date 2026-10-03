@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import type { AnalyticsOverview, Direction } from "@/modules/analytics/overview";
 
 import { ColumnChart, MiniColumns } from "./column-chart";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -107,7 +108,7 @@ export function LifeAreaCard({ overview }: { overview: AnalyticsOverview }) {
               <li key={area.lifeArea} className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-4 py-3 first:pt-0 last:pb-0 sm:grid-cols-[minmax(0,11rem)_minmax(0,1fr)_7.5rem]">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">
-                    <span aria-hidden>{area.emoji}</span> {area.label}
+                    <span aria-hidden><Glyph emoji={area.emoji} /></span> {area.label}
                   </p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     {area.completed} done{area.settled > 0 ? ` of ${area.settled}` : ""}

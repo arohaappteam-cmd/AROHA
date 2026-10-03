@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MAX_FOCUS_AREAS } from "@/modules/identity/life-areas";
 import type { CharacterSheet } from "@/server/services/character.service";
+import { Glyph } from "@/components/common/glyph";
 
 export function FocusAreasCard({ focus }: { focus: CharacterSheet["focus"] }) {
   return (
@@ -36,7 +37,7 @@ export function FocusAreasCard({ focus }: { focus: CharacterSheet["focus"] }) {
             {focus.map((area, index) => (
               <li key={area.key} className="flex gap-3 rounded-lg bg-muted/40 p-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-background text-xl" aria-hidden>
-                  {area.emoji}
+                  <Glyph emoji={area.emoji} />
                 </span>
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <p className="flex items-center gap-2 font-medium">

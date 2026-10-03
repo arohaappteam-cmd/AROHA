@@ -63,7 +63,7 @@ export default async function DiscoverPage() {
           </h2>
           <p className="text-sm text-muted-foreground">Practice builds the related skill tree, so a good experiment gives you a head start.</p>
         </div>
-        <ExperimentTemplates templates={overview.templates} canStart={overview.canStart} />
+        <ExperimentTemplates templates={overview.templates} canStart={overview.canStart} planLimit={overview.planLimit} />
         <CustomExperimentForm canStart={overview.canStart} />
       </section>
 

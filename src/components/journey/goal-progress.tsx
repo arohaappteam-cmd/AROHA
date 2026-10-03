@@ -9,6 +9,7 @@ import type { MilestoneNode } from "@/modules/journey/character";
 import type { GoalJourney } from "@/server/services/journey.service";
 
 import { Meter } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * A goal's roadmap as a path: start, each milestone in order, and the goal
@@ -64,7 +65,7 @@ function GoalCard({ goal, open }: { goal: GoalJourney; open: boolean }) {
     <li className="rounded-xl border bg-background/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link href={`/goals/${goal.id}`} className="min-w-0 truncate font-medium underline-offset-4 hover:underline">
-          <span aria-hidden>{goal.emoji}</span> {goal.title}
+          <span aria-hidden><Glyph emoji={goal.emoji} /></span> {goal.title}
         </Link>
         <div className="flex items-center gap-1.5">
           {goal.isMajor && <Badge variant="secondary">Major goal</Badge>}

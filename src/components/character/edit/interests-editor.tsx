@@ -18,6 +18,7 @@ import { MIN_INTERESTS_FOR_SETUP } from "@/modules/identity/setup";
 import { addInterestAction, removeInterestAction } from "@/server/actions/identity.actions";
 
 import { ChoiceChip } from "./choice-chip";
+import { Glyph } from "@/components/common/glyph";
 
 type Interest = { id: string; label: string; lifeArea: LifeArea | null };
 
@@ -100,7 +101,7 @@ export function InterestsEditor({
               >
                 {interest.lifeArea && (
                   <span aria-hidden className="text-xs">
-                    {LIFE_AREAS[interest.lifeArea].emoji}
+                    <Glyph emoji={LIFE_AREAS[interest.lifeArea].emoji} />
                   </span>
                 )}
                 {interest.label}
@@ -158,7 +159,7 @@ export function InterestsEditor({
               onClick={() => setArea(meta.key)}
               className="px-2.5 py-1 text-xs"
             >
-              <span aria-hidden>{meta.emoji}</span>
+              <span aria-hidden><Glyph emoji={meta.emoji} /></span>
               {meta.label}
             </ChoiceChip>
           ))}

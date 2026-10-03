@@ -41,7 +41,10 @@ export async function getAuthIdentity() {
   const claims = data.claims;
   const metadata = (claims.user_metadata ?? {}) as Record<string, unknown>;
   const email = typeof claims.email === "string" && claims.email ? claims.email : null;
-  const named = typeof metadata.display_name === "string" ? metadata.display_name.trim() : "";
+  // display_name: email sign-up. full_name / name: Google.
+  const named = [metadata.display_name, metadata.full_name, metadata.name]
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .find(Boolean) ?? "";
 
   return {
     authId: claims.sub,

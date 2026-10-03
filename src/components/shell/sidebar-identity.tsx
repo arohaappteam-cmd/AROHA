@@ -2,36 +2,43 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import { CharacterAvatar } from "@/components/character/character-avatar";
+import { PlanBadge } from "@/components/plans/plan-badge";
 import { toAppearance } from "@/modules/identity/avatar";
 import { getLevelProgress, tierForLevel } from "@/modules/progression";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { identityRepository } from "@/server/repositories/identity.repository";
-import { progressionRepository } from "@/server/repositories/progression.repository";
 
 /** Compact identity chip in the sidebar. Rendered inside a Suspense boundary. */
 export async function SidebarIdentity() {
   await connection();
   const user = await getCurrentUser();
-  const [character, totalXp] = await Promise.all([
-    identityRepository.ensureCharacter(user.id),
-    progressionRepository.getTotalXp(user.id),
-  ]);
-  const { level } = getLevelProgress(totalXp);
+  // Total XP rides along on the user row (a database-maintained rollup).
+  const character = await identityRepository.ensureCharacter(user.id);
+  const { level } = getLevelProgress(user.totalXp);
   const tier = tierForLevel(level);
 
   return (
-    <Link
-      href="/character"
-      className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent/60"
-    >
-      <CharacterAvatar appearance={toAppearance(character)} name={user.displayName} tier={tier} size={36} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{user.displayName}</span>
-        <span className="block text-xs text-muted-foreground">
-          Level {level} · {tier}
+    <div className="space-y-1">
+      <Link
+        href="/character"
+        className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-sidebar-accent/60"
+      >
+        <CharacterAvatar appearance={toAppearance(character)} name={user.displayName} tier={tier} size={36} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium">{user.displayName}</span>
+          <span className="block text-xs text-muted-foreground">
+            Level {level} · {tier}
+          </span>
         </span>
-      </span>
-    </Link>
+      </Link>
+      <Link
+        href="/plans"
+        className="flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground"
+      >
+        <PlanBadge tier={user.plan} />
+        {user.plan === "PREMIUM" ? "Your plan" : "See plans"}
+      </Link>
+    </div>
   );
 }
 

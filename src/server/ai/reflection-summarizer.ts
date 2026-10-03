@@ -26,6 +26,7 @@ const SYSTEM = [
 export async function summarizeReflection(
   answers: Omit<ReflectionInput, "date">,
   day: DayFacts,
+  { allowAI = true }: { allowAI?: boolean } = {},
 ): Promise<ReflectionSummary & { source: AISource }> {
   const result = await aiOrFallback(
     {
@@ -37,6 +38,7 @@ export async function summarizeReflection(
       maxTokens: 500,
     },
     () => fallbackReflectionSummary(answers, day),
+    { allowed: allowAI },
   );
   return { ...result.value, source: result.source };
 }

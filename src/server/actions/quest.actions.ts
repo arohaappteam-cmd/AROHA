@@ -67,15 +67,15 @@ export async function completeQuestAction(input: unknown): Promise<ActionResultW
     for (const credit of challenges?.credited ?? []) {
       notes.push(
         credit.completed
-          ? `${credit.emoji} ${credit.title} complete! +${credit.xpAwarded} XP`
-          : `${credit.emoji} ${credit.title}: day ${credit.daysDone} of ${credit.targetDays}`,
+          ? `${credit.title} complete! +${credit.xpAwarded} XP`
+          : `${credit.title}: day ${credit.daysDone} of ${credit.targetDays}`,
       );
     }
     if (experiment) {
-      notes.push(`🧪 ${experiment.daysPracticed} practice day${experiment.daysPracticed === 1 ? "" : "s"} in your experiment`);
+      notes.push(`${experiment.daysPracticed} practice day${experiment.daysPracticed === 1 ? "" : "s"} in your experiment`);
     }
     for (const achievement of achievements) {
-      notes.push(`${achievement.emoji} Achievement: ${achievement.name}${achievement.xpReward > 0 ? ` +${achievement.xpReward} XP` : ""}`);
+      notes.push(`Achievement: ${achievement.name}${achievement.xpReward > 0 ? ` +${achievement.xpReward} XP` : ""}`);
     }
     const suffix = notes.length > 0 ? ` · ${notes.join(" · ")}` : "";
     return {

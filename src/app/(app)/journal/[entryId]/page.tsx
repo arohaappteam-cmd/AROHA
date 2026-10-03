@@ -9,6 +9,7 @@ import { displayDateOnly, formatDateOnly } from "@/modules/goals/dates";
 import { moodMeta } from "@/modules/reflection/reflection";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getEntry } from "@/server/services/journal.service";
+import { Glyph } from "@/components/common/glyph";
 
 // Journal entries are private: keep them out of page titles and previews.
 export const metadata: Metadata = { title: "Journal entry" };
@@ -43,7 +44,7 @@ export default async function JournalEntryPage(props: PageProps<"/journal/[entry
           <span>{date}</span>
           {mood && (
             <span>
-              <span aria-hidden>{mood.emoji}</span> {mood.label}
+              <span aria-hidden><Glyph emoji={mood.emoji} /></span> {mood.label}
             </span>
           )}
           <span className="flex items-center gap-1 text-xs">

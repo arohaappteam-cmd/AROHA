@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import { ATTRIBUTES } from "@/modules/progression/attributes";
 import type { QuestCompletionPayload } from "@/modules/quests/completion";
+import { Glyph } from "@/components/common/glyph";
 
 export type QuestResultState = { title: string; payload: QuestCompletionPayload };
 
@@ -70,7 +71,7 @@ export function QuestResult({ result, onClose }: { result: QuestResultState; onC
               return (
                 <li key={area.lifeArea} className="grid grid-cols-[1.25rem_minmax(0,1fr)_2.5rem] items-center gap-2">
                   <span aria-hidden className="text-sm">
-                    {LIFE_AREAS[area.lifeArea].emoji}
+                    <Glyph emoji={LIFE_AREAS[area.lifeArea].emoji} />
                   </span>
                   <Meter
                     percent={area.offered ? (area.completed / area.offered) * 100 : 0}

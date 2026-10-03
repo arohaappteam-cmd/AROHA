@@ -12,10 +12,12 @@ import {
   nextProjectStatus,
   type ProjectTransition,
 } from "@/modules/projects/status";
+import { db } from "@/server/db";
 import { awardXp, revokeXp } from "@/server/progression/engine";
 import { projectRepository } from "@/server/repositories/project.repository";
 import { skillRepository } from "@/server/repositories/skill.repository";
 import { checkAchievements } from "@/server/services/achievement.service";
+import { planLimitMessage } from "@/server/services/plan.service";
 import { awardSkills, ensureSkillCatalogue, revokeSkillAwards, type DirectSkillOutcome } from "@/server/services/skill.service";
 
 /**
@@ -36,6 +38,17 @@ async function requireProject(userId: string, projectId: string) {
   const project = await projectRepository.findOwned(userId, projectId);
   if (!project) throw new ProjectError("That project doesn't exist");
   return project;
+}
+
+/** Null while another unfinished project fits the user's plan; otherwise why it doesn't. */
+export function projectLimitMessage(userId: string): Promise<string | null> {
+  return planLimitMessage(userId, "activeProjects", () => db.project.count({ where: { userId, status: { not: "COMPLETED" } } }));
+}
+
+/** Refuses to start one more unfinished project beyond the plan's limit. */
+async function assertProjectRoom(userId: string) {
+  const message = await projectLimitMessage(userId);
+  if (message) throw new ProjectError(message);
 }
 
 async function validSkillIds(skillIds: string[]): Promise<string[]> {
@@ -69,6 +82,7 @@ export async function listSkillOptions() {
 export type SkillOptionTree = Awaited<ReturnType<typeof listSkillOptions>>[number];
 
 export async function createProject(userId: string, input: ProjectInput) {
+  await assertProjectRoom(userId);
   const skillIds = await validSkillIds(input.skillIds);
   return projectRepository.create(
     userId,
@@ -144,6 +158,7 @@ export async function transitionProject(
   }
 
   if (transition === "reopen") {
+    await assertProjectRoom(userId);
     // Completion paid for a finished thing; reopening un-finishes it.
     await revokeXp(userId, "PROJECT_COMPLETION", project.id);
     await revokeSkillAwards(userId, "PROJECT_COMPLETION", project.id);

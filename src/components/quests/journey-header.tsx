@@ -12,6 +12,7 @@ import type { TodayJourney } from "@/server/services/quest-view.service";
 import { categoryStyle } from "./category-style";
 import { EnergyCheckIn } from "./energy-check-in";
 import { ProgressRing } from "./quest-meta";
+import { Glyph } from "@/components/common/glyph";
 
 const weekday = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" });
 
@@ -93,7 +94,7 @@ export function JourneyHeader({
                   )}
                 />
                 <p className="truncate text-[11px] text-muted-foreground">
-                  <span aria-hidden>{category.emoji}</span> <span className="hidden sm:inline">{category.label}</span>
+                  <span aria-hidden><Glyph emoji={category.emoji} /></span> <span className="hidden sm:inline">{category.label}</span>
                   <span className="sr-only">
                     {category.label}: {quest.status.toLowerCase().replace("_", " ")}
                   </span>

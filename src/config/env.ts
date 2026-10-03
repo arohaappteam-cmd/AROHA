@@ -22,6 +22,9 @@ const envSchema = z.object({
     .refine((value) => /^postgres(ql)?:\/\//.test(value), {
       error: "DATABASE_URL must be a postgresql:// connection string",
     }),
+  // Connections each server process may hold. Small on purpose: on Vercel
+  // every function instance has its own pool, all sharing the pooler.
+  DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(50).default(5),
   // "mock" is the offline default (used in dev and tests). "anthropic" turns
   // on the real AI Mentor when ANTHROPIC_API_KEY is also set; without a key it
   // degrades gracefully to deterministic fallbacks (see src/server/ai).
@@ -39,6 +42,9 @@ const envSchema = z.object({
   // only for development, or a private deployment behind its own password.
   // Defaults to "supabase" when the keys are set, otherwise "local".
   AUTH_MODE: z.enum(["supabase", "local"]).optional(),
+  // "Continue with Google" on the sign-in page. Turn the Google provider on
+  // in Supabase first (DEPLOYMENT.md), or set "off" to hide the button.
+  AUTH_GOOGLE: z.enum(["on", "off"]).default("on"),
   // Server-only Supabase secret key (sb_secret_… or the legacy service_role
   // key). Used for one thing: removing a sign-in when someone deletes their
   // account. Never prefix it with NEXT_PUBLIC_ — that would ship it to browsers.

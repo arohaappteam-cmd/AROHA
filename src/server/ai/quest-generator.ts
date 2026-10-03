@@ -84,6 +84,7 @@ export const aiQuestGenerator: QuestGenerator = {
   },
 };
 
-export function selectQuestGenerator(): QuestGenerator {
-  return getAIProvider() ? aiQuestGenerator : ruleBasedQuestGenerator;
+/** `allowAI` is false when the user's plan doesn't include AI. */
+export function selectQuestGenerator(allowAI = true): QuestGenerator {
+  return allowAI && getAIProvider() ? aiQuestGenerator : ruleBasedQuestGenerator;
 }

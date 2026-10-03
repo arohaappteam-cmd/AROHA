@@ -13,6 +13,7 @@ import type { ActionResult } from "@/lib/action-result";
 import { cn } from "@/lib/utils";
 import { JOURNAL_BODY_MAX } from "@/modules/reflection/journal";
 import { MOOD_OPTIONS } from "@/modules/reflection/reflection";
+import { Glyph } from "@/components/common/glyph";
 
 export type JournalFormValues = { title: string; body: string; mood: DayMood | null; date: string };
 
@@ -106,7 +107,7 @@ export function JournalEntryForm({
                   active ? "border-primary bg-primary/12 font-medium text-primary" : "hover:border-primary/50",
                 )}
               >
-                <span aria-hidden>{option.emoji}</span>
+                <span aria-hidden><Glyph emoji={option.emoji} /></span>
                 {option.label}
               </button>
             );

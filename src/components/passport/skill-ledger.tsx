@@ -5,6 +5,7 @@ import { EvaluatorBadge, ProofTierBadge } from "@/components/proof/proof-badges"
 import { cn } from "@/lib/utils";
 import { ASSESSMENT_KIND_LABEL } from "@/modules/assessments/grading";
 import type { PassportSkill } from "@/server/services/passport.service";
+import { Glyph } from "@/components/common/glyph";
 
 const TIER_DOT = {
   NONE: "bg-muted-foreground/30",
@@ -38,7 +39,7 @@ export function SkillLedger({ skills }: { skills: PassportSkill[] }) {
         <li key={skill.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <span className="mt-0.5 text-xl" aria-hidden>
-              {skill.tree.emoji}
+              <Glyph emoji={skill.tree.emoji} />
             </span>
             <div className="min-w-0 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">

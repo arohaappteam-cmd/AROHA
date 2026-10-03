@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { moodMeta } from "@/modules/reflection/reflection";
 import type { ReflectionView } from "@/server/services/reflection.service";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * The end of the daily loop (spec §44–45): complete quests → reflect →
@@ -32,7 +33,7 @@ export function EveningReflectionCard({
             Today, reflected{" "}
             {mood && (
               <span className="font-normal text-muted-foreground">
-                · <span aria-hidden>{mood.emoji}</span> {mood.label}
+                · <span aria-hidden><Glyph emoji={mood.emoji} /></span> {mood.label}
               </span>
             )}
           </p>

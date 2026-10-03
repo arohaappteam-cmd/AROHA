@@ -9,12 +9,10 @@ import { db } from "@/server/db";
  * progression engine service introduced alongside quest completion.
  */
 export const progressionRepository = {
+  /** One primary-key read: the database keeps User.totalXp in step with the ledger. */
   async getTotalXp(userId: string): Promise<number> {
-    const result = await db.xpTransaction.aggregate({
-      where: { userId },
-      _sum: { amount: true },
-    });
-    return result._sum.amount ?? 0;
+    const user = await db.user.findUnique({ where: { id: userId }, select: { totalXp: true } });
+    return user?.totalXp ?? 0;
   },
 
   async getAttributeTotals(userId: string): Promise<AttributeTotal[]> {

@@ -1,4 +1,4 @@
-import { CompassIcon } from "lucide-react";
+import { CompassIcon, LockIcon } from "lucide-react";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
@@ -40,11 +40,24 @@ export function SectionNav() {
 }
 
 /** The time range for the trend panels below it. A link per range, so it's shareable and works without JavaScript. */
-export function RangeFilter({ active, year }: { active: JourneyRangeKey; year: number }) {
+/** Ranges in `locked` belong to a higher plan; they link to /plans instead. */
+export function RangeFilter({ active, year, locked = [] }: { active: JourneyRangeKey; year: number; locked?: readonly JourneyRangeKey[] }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <nav aria-label="Time range" className="flex flex-wrap gap-1 rounded-lg border bg-card p-1">
-        {JOURNEY_RANGE_KEYS.map((key) => (
+        {JOURNEY_RANGE_KEYS.map((key) =>
+          locked.includes(key) ? (
+            <Link
+              key={key}
+              href="/plans"
+              title={`${JOURNEY_RANGES[key].label} — part of Pro (coming soon)`}
+              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 font-mono text-xs tracking-[0.12em] text-muted-foreground/60 transition-colors hover:text-violet-200"
+            >
+              <LockIcon className="size-3" aria-hidden />
+              {JOURNEY_RANGES[key].short}
+              <span className="sr-only"> (Pro)</span>
+            </Link>
+          ) : (
           <Link
             key={key}
             href={`/journey?range=${key}&year=${year}#trends`}
@@ -58,7 +71,8 @@ export function RangeFilter({ active, year }: { active: JourneyRangeKey; year: n
           >
             {JOURNEY_RANGES[key].short}
           </Link>
-        ))}
+          ),
+        )}
       </nav>
       <p className="text-xs text-muted-foreground">Range applies to XP, life areas and energy below.</p>
     </div>

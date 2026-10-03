@@ -1,6 +1,20 @@
 import "server-only";
 
 import { db } from "@/server/db";
+import { cachedCatalogue } from "@/server/db/catalogue-cache";
+
+const loadSkillsWithTrees = cachedCatalogue(() =>
+  db.skill.findMany({
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      baseXp: true,
+      maxLevel: true,
+      tree: { select: { slug: true, name: true, emoji: true, lifeArea: true } },
+    },
+  }),
+);
 
 /** Read-only queries behind the Skill Passport. Everything here is already earned. */
 export const passportRepository = {
@@ -42,16 +56,7 @@ export const passportRepository = {
   },
 
   skillsWithTrees() {
-    return db.skill.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        baseXp: true,
-        maxLevel: true,
-        tree: { select: { slug: true, name: true, emoji: true, lifeArea: true } },
-      },
-    });
+    return loadSkillsWithTrees();
   },
 
   achievements(userId: string) {

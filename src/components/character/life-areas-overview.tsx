@@ -4,6 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { CharacterSheet } from "@/server/services/character.service";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 
@@ -37,7 +38,7 @@ export function LifeAreasOverview({ areas }: { areas: CharacterSheet["lifeAreas"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xl" aria-hidden>
-                  {area.emoji}
+                  <Glyph emoji={area.emoji} />
                 </span>
                 {area.isFocus ? (
                   <span className="rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-medium tracking-wide text-primary uppercase">

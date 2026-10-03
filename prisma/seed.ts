@@ -5,7 +5,8 @@ import { syncAchievementCatalogue } from "../src/server/db/achievement-sync";
 import { createPrismaClient } from "../src/server/db/create-client";
 import { syncSkillCatalogue } from "../src/server/db/skill-sync";
 
-const databaseUrl = process.env.DATABASE_URL;
+// Builds seed over the direct connection when one is configured (see prisma.config.ts).
+const databaseUrl = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is not set");
 
 const prisma = createPrismaClient(databaseUrl);

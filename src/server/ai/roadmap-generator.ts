@@ -56,6 +56,7 @@ export const aiRoadmapGenerator: RoadmapGenerator = {
   },
 };
 
-export function selectRoadmapGenerator(): RoadmapGenerator {
-  return getAIProvider() ? aiRoadmapGenerator : ruleBasedRoadmapGenerator;
+/** `allowAI` is false when the user's plan doesn't include AI. */
+export function selectRoadmapGenerator(allowAI = true): RoadmapGenerator {
+  return allowAI && getAIProvider() ? aiRoadmapGenerator : ruleBasedRoadmapGenerator;
 }

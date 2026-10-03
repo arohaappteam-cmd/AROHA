@@ -4,6 +4,7 @@ import Link from "next/link";
 import { categoryFor } from "@/modules/quests/categories";
 import { cn } from "@/lib/utils";
 import type { ReflectionDay } from "@/server/services/reflection.service";
+import { Glyph } from "@/components/common/glyph";
 
 /** "Today's journey" beside the reflection (spec §45): what actually happened. */
 export function DayRecord({ day }: { day: ReflectionDay }) {
@@ -37,7 +38,7 @@ export function DayRecord({ day }: { day: ReflectionDay }) {
                 />
                 <span className="min-w-0 flex-1">
                   <span className={cn("block text-sm", !completed && "text-muted-foreground")}>
-                    <span aria-hidden>{category.emoji}</span> {quest.title}
+                    <span aria-hidden><Glyph emoji={category.emoji} /></span> {quest.title}
                     {!quest.isCore && <span className="ml-1.5 text-xs text-muted-foreground">(extra)</span>}
                   </span>
                   {quest.note && <span className="block text-xs text-muted-foreground italic">&ldquo;{quest.note}&rdquo;</span>}

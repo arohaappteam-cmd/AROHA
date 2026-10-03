@@ -7,6 +7,7 @@ import type { GroupChallengeView } from "@/server/services/social.service";
 
 import { GroupChallengeButton } from "./membership-buttons";
 import { personTier } from "./person-card";
+import { Glyph } from "@/components/common/glyph";
 
 /**
  * A group challenge: the same commitment, attempted alongside other people.
@@ -21,7 +22,7 @@ export function GroupChallengeCard({ view }: { view: GroupChallengeView }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span aria-hidden className="text-xl">
-            {challenge.emoji}
+            <Glyph emoji={challenge.emoji} />
           </span>
           {challenge.title}
           {you.joined && <Badge variant="secondary">You&apos;re in</Badge>}

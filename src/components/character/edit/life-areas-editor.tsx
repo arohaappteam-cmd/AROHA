@@ -17,6 +17,7 @@ import { saveLifeAreasAction } from "@/server/actions/identity.actions";
 
 import { SaveBar } from "./save-bar";
 import { useSave } from "./use-save";
+import { Glyph } from "@/components/common/glyph";
 
 export type LifeAreasEditorValue = {
   active: Record<LifeArea, boolean>;
@@ -96,7 +97,7 @@ export function LifeAreasEditor({ initial }: { initial: LifeAreasEditorValue }) 
                   <div className="flex items-center gap-2 sm:w-48 sm:shrink-0">
                     <span className="w-4 text-xs font-medium text-primary tabular-nums">{index + 1}</span>
                     <span aria-hidden className="text-lg">
-                      {meta.emoji}
+                      <Glyph emoji={meta.emoji} />
                     </span>
                     <span className="font-medium">{meta.label}</span>
                   </div>
@@ -148,7 +149,7 @@ export function LifeAreasEditor({ initial }: { initial: LifeAreasEditorValue }) 
               )}
             >
               <span aria-hidden className={cn("text-2xl", !active && "grayscale opacity-60")}>
-                {meta.emoji}
+                <Glyph emoji={meta.emoji} />
               </span>
               <div className="min-w-0 flex-1">
                 <label htmlFor={switchId} className="flex items-center gap-2 text-sm font-medium">

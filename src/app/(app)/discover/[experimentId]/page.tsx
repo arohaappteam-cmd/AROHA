@@ -14,6 +14,7 @@ import { displayDateOnly } from "@/modules/goals/dates";
 import { findTreeSpec } from "@/modules/skills/catalogue";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getExperiment } from "@/server/services/experiment.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Experiment" };
 
@@ -37,7 +38,7 @@ export default async function ExperimentPage(props: PageProps<"/discover/[experi
       <header className="space-y-3">
         <p className="text-xs font-medium tracking-[0.18em] text-primary uppercase">Experiment</p>
         <h1 className="flex items-center gap-3 text-2xl font-semibold tracking-tight md:text-3xl">
-          <span aria-hidden>{experiment.emoji}</span>
+          <span aria-hidden><Glyph emoji={experiment.emoji} /></span>
           {experiment.title}
         </h1>
         {experiment.description && <p className="text-sm text-muted-foreground">{experiment.description}</p>}

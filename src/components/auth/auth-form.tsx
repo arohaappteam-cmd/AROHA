@@ -4,6 +4,7 @@ import { LoaderCircleIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { GoogleIcon } from "@/components/auth/google-icon";
 import { useActionRunner } from "@/components/goals/use-action-runner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +28,11 @@ const COPY: Record<Mode, { title: string; description: string; submit: string }>
   reset: { title: "Reset your password", description: "We'll email you a link to choose a new one.", submit: "Send reset link" },
 };
 
-/** Sign in, create an account, or ask for a password reset — one card, three modes. */
-export function AuthForm({ next, initialError }: { next: string; initialError: string | null }) {
+/**
+ * Sign in, create an account, or ask for a password reset — one card, three
+ * modes — with "Continue with Google" above email when it's switched on.
+ */
+export function AuthForm({ next, initialError, google }: { next: string; initialError: string | null; google: boolean }) {
   const router = useRouter();
   const { pending, error, setError, run } = useActionRunner();
   const [mode, setMode] = useState<Mode>("sign-in");
@@ -36,6 +40,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError: s
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [redirecting, setRedirecting] = useState(false);
   const copy = COPY[mode];
 
   function switchTo(nextMode: Mode) {
@@ -88,6 +93,27 @@ export function AuthForm({ next, initialError }: { next: string; initialError: s
     return { ok: true };
   }
 
+  /**
+   * Hands off to Google, which returns to /auth/confirm with a one-time code
+   * (PKCE: the verifier waits in this browser's cookies). A new Google
+   * account becomes a new AROHA account; an existing email is linked.
+   */
+  async function continueWithGoogle() {
+    setError(null);
+    setNotice(null);
+    setRedirecting(true);
+    const callback = new URL("/auth/confirm", window.location.origin);
+    if (next !== "/") callback.searchParams.set("next", next);
+    const { error: failure } = await supabaseBrowser().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: callback.toString(), queryParams: { prompt: "select_account" } },
+    });
+    if (failure) {
+      setRedirecting(false);
+      setError("Couldn't reach Google just now. Try again, or use your email.");
+    }
+  }
+
   function submit() {
     setNotice(null);
     run(mode === "sign-in" ? signIn : mode === "sign-up" ? signUp : requestReset);
@@ -101,6 +127,20 @@ export function AuthForm({ next, initialError }: { next: string; initialError: s
         <h1 className="text-2xl font-semibold tracking-tight">{copy.title}</h1>
         <p className="text-sm text-muted-foreground">{copy.description}</p>
       </div>
+
+      {google && mode !== "reset" && (
+        <div className="space-y-4">
+          <Button type="button" variant="outline" className="w-full gap-2.5" disabled={pending || redirecting} onClick={continueWithGoogle}>
+            {redirecting ? <LoaderCircleIcon data-icon="inline-start" className="animate-spin" /> : <GoogleIcon className="size-4" />}
+            Continue with Google
+          </Button>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground" aria-hidden>
+            <span className="h-px flex-1 bg-border" />
+            or with email
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </div>
+      )}
 
       <form
         className="space-y-4"
@@ -143,7 +183,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError: s
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button type="submit" className="w-full" disabled={pending || redirecting}>
           {pending && <LoaderCircleIcon data-icon="inline-start" className="animate-spin" />}
           {copy.submit}
         </Button>

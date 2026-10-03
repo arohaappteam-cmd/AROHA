@@ -8,6 +8,7 @@ import { labelIndexes, monotonePath, niceCeiling } from "@/modules/journey/chart
 import { percentChange, type XpFilter, type XpProgress } from "@/modules/journey/progress";
 
 import { Delta, HudLabel } from "./hud";
+import { Glyph } from "@/components/common/glyph";
 
 const numberFormat = new Intl.NumberFormat("en");
 const WIDTH = 1000;
@@ -106,7 +107,7 @@ export function XpProgressChart({ xp, rangeLabel }: { xp: XpProgress; rangeLabel
                 entry.filter === filter ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {entry.filter === "ALL" ? "All" : <span aria-label={filterLabel(entry.filter)}>{LIFE_AREAS[entry.filter].emoji}</span>}
+              {entry.filter === "ALL" ? "All" : <span aria-label={filterLabel(entry.filter)}><Glyph emoji={LIFE_AREAS[entry.filter].emoji} /></span>}
             </button>
           ))}
         </div>

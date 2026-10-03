@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LIFE_AREAS } from "@/modules/identity/life-areas";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getSocialProfile } from "@/server/services/social.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Your sharing" };
 
@@ -77,7 +78,7 @@ export default async function SocialProfilePage() {
                   {viewer.skills.slice(0, 4).map((skill) => (
                     <li key={skill.treeSlug} className="flex items-center justify-between gap-2">
                       <span className="truncate">
-                        <span aria-hidden>{skill.emoji}</span> {skill.name}
+                        <span aria-hidden><Glyph emoji={skill.emoji} /></span> {skill.name}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground tabular-nums">Lv {skill.level}</span>
                     </li>
@@ -96,7 +97,7 @@ export default async function SocialProfilePage() {
               <p className="flex flex-wrap gap-1.5">
                 {viewer.focusAreas.map((area) => (
                   <Badge key={area} variant="outline">
-                    {LIFE_AREAS[area].emoji} {LIFE_AREAS[area].label}
+                    <Glyph emoji={LIFE_AREAS[area].emoji} /> {LIFE_AREAS[area].label}
                   </Badge>
                 ))}
               </p>

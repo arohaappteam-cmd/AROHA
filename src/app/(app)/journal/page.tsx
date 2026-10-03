@@ -14,6 +14,7 @@ import { moodMeta } from "@/modules/reflection/reflection";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { listEntries, PAGE_SIZE } from "@/server/services/journal.service";
 import { getReflectionDay, listRecentReflections } from "@/server/services/reflection.service";
+import { Glyph } from "@/components/common/glyph";
 
 export const metadata: Metadata = { title: "Journal" };
 
@@ -91,7 +92,7 @@ export default async function JournalPage(props: PageProps<"/journal">) {
                       {displayDateOnly(reflection.date)}
                       {mood && (
                         <span className="text-xs font-normal text-muted-foreground">
-                          <span aria-hidden>{mood.emoji}</span> {mood.label}
+                          <span aria-hidden><Glyph emoji={mood.emoji} /></span> {mood.label}
                         </span>
                       )}
                     </p>
@@ -145,7 +146,7 @@ export default async function JournalPage(props: PageProps<"/journal">) {
                       <p className="flex items-center justify-between gap-3">
                         <span className="truncate font-medium">{entry.title ?? displayDateOnly(formatDateOnly(entry.date))}</span>
                         <span className="shrink-0 text-xs text-muted-foreground">
-                          {mood && <span aria-label={mood.label}>{mood.emoji} </span>}
+                          {mood && <span aria-label={mood.label}><Glyph emoji={mood.emoji} /> </span>}
                           {displayDateOnly(formatDateOnly(entry.date))}
                         </span>
                       </p>
