@@ -61,7 +61,11 @@ Click **Connect** (top bar). You need two of the pooler strings:
   (Supabase's "Direct connection" is IPv6-only, which Vercel's build doesn't
   support — use the session pooler.)
 
-For **both**, replace `[YOUR-PASSWORD]` and add `?sslmode=require`:
+For **both**, replace `[YOUR-PASSWORD]` and add `?sslmode=require`. Copy
+the host exactly as Supabase shows it: it names your project's region (e.g.
+`aws-0-ap-northeast-2…` for Seoul), and the username carries your project
+ID (`postgres.abcdefghij…`). A wrong region fails with "tenant/user not
+found".
 
 ```
 DATABASE_URL=postgresql://postgres.abcdefghij:MyStrongPassword@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require
@@ -227,11 +231,13 @@ Prisma client, applies pending migrations, refreshes the skill and
 achievement catalogues (safe to repeat), then builds. **Preview** builds skip
 the migrations, so an unmerged branch can never change the live database.
 
-**Region.** `vercel.json` runs functions in `sin1` (Singapore). Change it to
-match your Supabase region, then redeploy:
+**Region.** `vercel.json` runs functions in `icn1` (Seoul), matching AROHA's
+Supabase project. If you ever move the database, change it to match, then
+redeploy:
 
 | Supabase region | Vercel region |
 | --- | --- |
+| Northeast Asia (Seoul) `ap-northeast-2` | `icn1` |
 | Southeast Asia (Singapore) `ap-southeast-1` | `sin1` |
 | South Asia (Mumbai) `ap-south-1` | `bom1` |
 | US East (N. Virginia) `us-east-1` | `iad1` |
@@ -347,6 +353,7 @@ in [DATABASE.md](DATABASE.md#performance).
 
 | Symptom | Likely cause |
 | --- | --- |
+| `tenant/user postgres.… not found` | Pooler host is for the wrong region, or the username lacks the project ID — copy both strings exactly from Supabase → Connect |
 | Build fails at `prisma migrate deploy` | `DIRECT_URL` missing, or set to the transaction pooler (6543) — use the **session pooler** (5432) |
 | `password authentication failed` | Wrong password, or special characters not URL-encoded |
 | `self-signed certificate in certificate chain` | `sslmode` other than `require` without `DATABASE_CA_CERT` — use `?sslmode=require` |

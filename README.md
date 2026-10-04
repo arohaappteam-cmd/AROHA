@@ -54,7 +54,7 @@ user. Add `NEXT_PUBLIC_SUPABASE_URL` and
 | `npm run typecheck` | Route types + TypeScript |
 | `npm run lint` | ESLint |
 | `npm test` | Unit tests |
-| `npm run test:integration` | Service tests against the database in `.env` |
+| `npm run test:integration` | Service tests against a local database (refuses remote ones) |
 | `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Database |
 | `npm run plan:set -- <email> <free\|pro\|premium>` | Grant a plan by hand |
 

@@ -211,7 +211,7 @@ writes the goal and generates a roadmap. Domain errors come back as
 | Command | What it runs |
 | --- | --- |
 | `npm test` | Unit tests for `modules/` and other pure code (fast, no database) |
-| `npm run test:integration` | Service tests against the database in `.env`, using throwaway users that are deleted afterwards |
+| `npm run test:integration` | Service tests against a **local** database, using throwaway users that are deleted afterwards. Refuses to run when `DATABASE_URL` isn't localhost (`src/test/integration-guard.ts`) |
 | `npm run typecheck` | Route type generation + TypeScript |
 | `npm run lint` | ESLint |
 

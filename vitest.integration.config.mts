@@ -16,7 +16,8 @@ export default defineConfig({
   test: {
     include: ["src/**/*.integration.test.ts"],
     environment: "node",
-    setupFiles: ["dotenv/config"],
+    // Load .env, then refuse to touch any database that isn't local.
+    setupFiles: ["dotenv/config", "./src/test/integration-guard.ts"],
     // Tests share one database; run files one at a time.
     fileParallelism: false,
     testTimeout: 20_000,

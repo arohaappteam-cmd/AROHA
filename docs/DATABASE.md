@@ -64,7 +64,8 @@ that fast:
 
 ### 1. Same region
 
-`vercel.json` runs functions in `sin1` (Singapore). Keep it in the same
+`vercel.json` runs functions in `icn1` (Seoul), next to AROHA's Supabase
+project (`ap-northeast-2`). Keep the two in the same
 region as the Supabase project — each query then takes ~1 ms instead of
 ~100 ms. This matters more than anything below. (Region table in
 [DEPLOYMENT.md](DEPLOYMENT.md#9-import-the-project).)
