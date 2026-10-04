@@ -226,6 +226,8 @@ Later changes: commit, then `git push`. Vercel redeploys on every push to
    | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | from step 3 |
    | `SUPABASE_SECRET_KEY` | from step 3 |
    | `AI_PROVIDER` | `mock` |
+   | `AUTH_GOOGLE` | `off` until Google is set up (step 5), then `on` |
+   | `SITE_URL` | the address people visit, e.g. `https://arohalos.vercel.app` |
 
 4. **Deploy**. The first build takes a few minutes.
 
