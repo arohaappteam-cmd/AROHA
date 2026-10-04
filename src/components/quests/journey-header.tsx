@@ -43,7 +43,7 @@ export function JourneyHeader({
     <section aria-labelledby="journey-title" className="relative overflow-hidden rounded-3xl border bg-card">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklch,var(--primary)_28%,transparent),transparent_55%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--xp)_14%,transparent),transparent_50%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklch,var(--primary)_28%,transparent),transparent_55%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--primary)_14%,transparent),transparent_50%)]"
       />
       <div className="relative space-y-6 p-5 md:p-8">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">

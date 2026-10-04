@@ -1,13 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="aroha-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#7c3aed"/>
-      <stop offset="0.55" stop-color="#c026d3"/>
-      <stop offset="1" stop-color="#f59e0b"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="16" fill="url(#aroha-bg)"/>
-  <path d="M16.5 47 L32 16.5 L47.5 47" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="32" cy="38" r="3.6" fill="#fff"/>
-  <path d="M48.5 8.5c.7 3.9 1.7 4.9 5.6 5.6-3.9.7-4.9 1.7-5.6 5.6-.7-3.9-1.7-4.9-5.6-5.6 3.9-.7 4.9-1.7 5.6-5.6z" fill="#fff"/>
+  <rect width="64" height="64" rx="16" fill="#fafafa"/>
+  <path d="M16.5 47 L32 16.5 L47.5 47" fill="none" stroke="#0a0a0a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="38" r="3.6" fill="#0a0a0a"/>
+  <path d="M48.5 8.5c.7 3.9 1.7 4.9 5.6 5.6-3.9.7-4.9 1.7-5.6 5.6-.7-3.9-1.7-4.9-5.6-5.6 3.9-.7 4.9-1.7 5.6-5.6z" fill="#0a0a0a"/>
 </svg>

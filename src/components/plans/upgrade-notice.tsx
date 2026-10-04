@@ -9,7 +9,7 @@ export function UpgradeNotice({ message, className }: { message: string; classNa
     <div
       role="note"
       className={cn(
-        "flex flex-col gap-2 rounded-xl border border-violet-400/30 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/5 to-transparent px-3.5 py-3 text-sm sm:flex-row sm:items-center",
+        "flex flex-col gap-2 rounded-xl border bg-muted/40 px-3.5 py-3 text-sm sm:flex-row sm:items-center",
         className,
       )}
     >
@@ -17,7 +17,7 @@ export function UpgradeNotice({ message, className }: { message: string; classNa
       <p className="flex-1 text-pretty text-muted-foreground">{message}</p>
       <Link
         href="/plans"
-        className="inline-flex shrink-0 items-center gap-1 font-medium text-violet-200 underline-offset-4 hover:underline"
+        className="inline-flex shrink-0 items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
       >
         See plans
         <ArrowRightIcon className="size-3.5" aria-hidden />

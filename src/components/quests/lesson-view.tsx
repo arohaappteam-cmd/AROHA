@@ -24,7 +24,7 @@ export function LessonView({ lesson }: { lesson: LearningExperience }) {
         ))}
       </div>
 
-      <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+      <div className="flex gap-3 rounded-xl border bg-muted/40 p-4">
         <LightbulbIcon className="mt-0.5 size-5 shrink-0 text-amber-500" aria-hidden />
         <div className="space-y-0.5">
           <p className="text-xs font-medium tracking-wide text-amber-600 uppercase dark:text-amber-300">Key idea</p>

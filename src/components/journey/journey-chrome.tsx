@@ -51,7 +51,7 @@ export function RangeFilter({ active, year, locked = [] }: { active: JourneyRang
               key={key}
               href="/plans"
               title={`${JOURNEY_RANGES[key].label} — part of Pro (coming soon)`}
-              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 font-mono text-xs tracking-[0.12em] text-muted-foreground/60 transition-colors hover:text-violet-200"
+              className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 font-mono text-xs tracking-[0.12em] text-muted-foreground/60 transition-colors hover:text-foreground"
             >
               <LockIcon className="size-3" aria-hidden />
               {JOURNEY_RANGES[key].short}

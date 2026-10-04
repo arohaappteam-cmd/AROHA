@@ -1,397 +1,73 @@
 # AROHA
 
-AI-powered real-life personal growth and progression system. The product vision
-lives in [AROHA_Master_Product_Specification-1.md](AROHA_Master_Product_Specification-1.md).
+**Turn everyday life into an evolving RPG.** AROHA gives you five small
+quests a day across body, mind, learning, people and your goals, and turns
+what you actually do into XP, levels, skills, proof and a record of your
+growth — alone or with friends.
 
-**Current state: real accounts (email + Google via Supabase Auth), a live community, and Free / Pro / Premium plans — paid tiers "coming soon", no payments. The AI Mentor is Premium and "coming soon".**
+Built with Next.js 16, React 19, TypeScript, Tailwind CSS 4, Prisma 7,
+PostgreSQL and Supabase Auth. Deploys to Vercel.
 
-Deploying: see [DEPLOYMENT.md](DEPLOYMENT.md) (Supabase + Vercel).
+**Status:** launch-ready. Real accounts (email + Google), a live community,
+and Free / Pro / Premium plans — paid tiers are "coming soon" and no
+payments exist yet. The AI Mentor is part of Premium and also coming soon.
 
-| Phase | Scope | Status |
-| ----- | ----- | ------ |
-| 0 | Foundation: shell, database, data layer, AI provider abstraction | Done |
-| 1 | Profile, character & avatar, interests, life areas & focus, preferences, character dashboard | Done |
-| 2 | Goals → milestones → missions, roadmap generation & editor, goal lifecycle | Done |
-| 3 | Daily quests: generation, today's journey, quest lifecycle, learning architecture | Done |
-| 4 | AI Mentor: Claude provider, AI quest/roadmap/discovery generation, insights, graceful fallback | Done |
-| 5 | Progression: XP ledger, levels, attributes, level-up moments, XP history | Done |
-| 6 | Skills: 11 skill trees, per-skill levels, unlocks, visual tree, skill history | Done |
-| 7 | Motivation: achievements, streaks, challenges, Shadow Debt | Done |
-| 8 | Projects with evidence, assessments (quiz / practical / project review, AI-assisted), proof of skill, Skill Passport | Done |
-| 9 | Private journal, end-of-day reflection with AI summary, life timeline, Experiment Mode | Done |
-| 10 | Personal analytics: trends, life-area balance, goal momentum, skill progression, patterns with evidence, AI insights & recommendations | Done |
-| 11 | Community: social profiles, discovery, guilds, group challenges, opt-in leaderboards, mentorship | Done |
-| 12 | Accounts: Supabase Auth sign-up/sign-in/reset; live community of real members; two-sided mentorship requests with private notes | Done |
-| 13 | Progression map (`/journey`): level & tier path, weekly rings, XP chart with ranges, quest activity matrix, consistency heatmap, life areas & energy map, goal milestone paths, skill paths, weekly/monthly/yearly reviews, achievement rarity & progress, quest result card | Done |
-| 14 | Launch: Vercel deploy, Google sign-in, Free/Pro/Premium tiers with limits and gated features (payments coming soon), database tuning (pooling, indexes, XP rollup), icon system and colour palette, grouped + mobile tab navigation | Done |
-| — | Payments and AI Mentor launch | Not started |
+---
 
-Routes: `/` (today's journey), `/quests/[questId]`, `/character`,
-`/character/edit`, `/goals` (`?view=completed|archived`), `/goals/new`,
-`/goals/[goalId]`, `/goals/[goalId]/edit`, `/skills`, `/skills/[treeSlug]`,
-`/journey` (progression map, `?range=7d|30d|90d|6m|1y|all&year=`), `/journey/challenges` (challenges & streaks), `/projects`, `/projects/new`,
-`/projects/[projectId]`, `/projects/[projectId]/edit`, `/assessments`,
-`/assessments/[assessmentKey]`, `/assessments/attempts/[attemptId]`, `/passport`,
-`/journal`, `/journal/reflect` (`?date=`), `/journal/new`, `/journal/[entryId]`,
-`/journal/[entryId]/edit`, `/journey/timeline` (`?kind=`), `/discover`,
-`/discover/[experimentId]`, `/insights` (`?range=4w|12w|26w`),
-`/community`, `/community/guilds`, `/community/guilds/[slug]`,
-`/community/challenges`, `/community/leaderboards` (`?board=&guild=`),
-`/community/mentorship`, `/community/mentorship/[mentorshipId]`, `/community/people/[handle]`,
-`/community/profile`, `/plans`, `/login`, `/auth/confirm`, `/reset-password`,
-`/mentor`, `/api/health`.
+## Documentation
 
-## Plans
+| Doc | Read it for |
+| --- | --- |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | **Launching:** GitHub, Supabase, Google sign-in, Vercel — step by step, with a checklist |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the codebase is organised: every folder, the layers, how to add a feature |
+| [docs/AUTH_AND_SECURITY.md](docs/AUTH_AND_SECURITY.md) | Sign-in flows, sessions, secrets, data protection, security headers |
+| [docs/DATABASE.md](docs/DATABASE.md) | The data model, design rules, performance tuning, migrations |
+| [docs/FEATURES.md](docs/FEATURES.md) | Everything that's built, every route, how each system behaves, plans |
+| [docs/DESIGN.md](docs/DESIGN.md) | The black-and-white colour rule, icons, logo, navigation |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | What's next: payments, AI Mentor, features from the spec |
+| [docs/PRODUCT_SPEC.md](docs/PRODUCT_SPEC.md) | The original product vision (cited in code as "spec §N") |
 
-Three tiers, defined in one place: `src/modules/plans/catalogue.ts` (limits,
-features, display copy, the comparison table).
+---
 
-| | Free | Pro | Premium |
-| --- | --- | --- | --- |
-| Core game: quests, character, skills, journal, challenges, community | ✓ | ✓ | ✓ |
-| Active goals / projects | 3 / 2 | Unlimited | Unlimited |
-| Experiments at a time | 1 | 2 | 2 |
-| Journey map history | 30 days | All time | All time |
-| Insights | — | ✓ | ✓ |
-| AI quests, roadmaps, summaries, insight reports, assessment feedback | — | — | ✓ |
-| AI Mentor | — | — | ✓ (coming soon) |
+## Run it locally
 
-- **No payments.** Pro and Premium are marked "coming soon" everywhere; the
-  `/plans` page records "notify me" interest (`PlanInterest`) and nothing
-  else. Grant a tier by hand with `npm run plan:set -- <email|handle> <tier>`
-  or by editing `User.plan`.
-- **Limits are enforced in services**, not just hidden in the UI: goal and
-  project creation, reopening and restoring, and experiment starts check the
-  plan and throw the domain error with a friendly message.
-- **AI is per plan.** `aiAllowedFor(userId)` gates every AI call; with no AI
-  provider configured it returns false without touching the database.
-- **Over a limit is never punished.** Nothing is deleted; only starting
-  another is blocked.
-
-## AI Mentor
-
-**Coming soon, with Premium.** The `/mentor` page and its nav entry say so;
-nothing links to it. The AI service layer below still powers optional AI in
-quests, roadmaps, reflections and insights when configured — for Premium
-accounts only.
-
-Off by default. To turn it on, set `AI_PROVIDER=anthropic` and `ANTHROPIC_API_KEY`
-in `.env` (optionally `AI_MODEL`, default `claude-opus-5`). With no key the app
-runs unchanged on deterministic fallbacks — nothing breaks, it's just less
-personalised.
-
-- **Service layer only.** UI never calls the model. Everything goes through
-  `src/server/ai` (`getAIProvider` → `generateStructured` → `aiOrFallback`).
-- **Structured outputs, always validated.** Each task names a zod schema; the
-  Claude provider constrains output to it (`messages.parse` + `zodOutputFormat`)
-  and `generateStructured` re-validates. Invalid output is rejected and the
-  caller falls back.
-- **The AI generates; the backend owns game state (spec §6).** AI never sets XP,
-  levels, stats, achievements, ids or goal linkage. The AI quest generator only
-  rewords the four non-goal core quests; the goal quest, carry-overs, payloads
-  and XP stay deterministic. The AI roadmap generator's output is re-validated
-  and its milestones/missions are persisted by the backend.
-- **Fallbacks are real, not fake AI.** When AI is unavailable, quests and
-  roadmaps come from the rule-based generators and mentor insights from a
-  transparent heuristic — never a hard-coded "AI response".
-
-## Stack
-
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS 4 ·
-shadcn/ui (Base UI) · Prisma 7 (`@prisma/adapter-pg`) · PostgreSQL · zod · Vitest
-
-## Getting started
+Needs Node.js 24 and PostgreSQL.
 
 ```bash
-cp .env.example .env        # set DATABASE_URL (needs Node.js 20+ and PostgreSQL)
-npm install                 # also runs `prisma generate`
-npm run db:migrate          # apply migrations
-npm run db:seed             # optional: local user + skill & achievement catalogues
-npm run dev                 # http://localhost:3000
+cp .env.example .env     # set DATABASE_URL to your local database
+npm install              # also generates the Prisma client
+npm run db:migrate       # create the tables
+npm run db:seed          # skill + achievement catalogues
+npm run dev              # http://localhost:3000
 ```
 
-| Script              | Purpose                                      |
-| ------------------- | -------------------------------------------- |
-| `npm run dev`       | Dev server                                   |
-| `npm run build`     | Production build                             |
-| `npm run typecheck` | Route typegen + `tsc --noEmit`               |
-| `npm run lint`      | ESLint                                       |
-| `npm test`          | Unit tests (Vitest)                          |
-| `npm run test:integration` | Service tests against the database in `.env` (uses throwaway users) |
-| `npm run db:*`      | `generate`, `migrate`, `deploy`, `seed`, `studio` |
-| `npm run plan:set`  | Grant a plan: `-- friend@example.com pro`; `-- --interest` lists "notify me" sign-ups |
-| `npm run vercel-build` | What Vercel runs: generate, migrate + seed (production only), build |
+Without Supabase keys in `.env` there's no sign-in — you're a single local
+user. Add `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` to try real accounts locally.
 
-Health check: `GET /api/health` → `{ status, database: { ok, latencyMs } }`. Public, so it never includes error details (those go to the server log).
+## Scripts
 
-**Accounts.** People delete their own account (all data, then their sign-in)
-from Character → Customize → Account; that needs `SUPABASE_SECRET_KEY` on the
-server. **Errors** are logged as JSON lines by `src/instrumentation.ts`
-(optionally posted to `ERROR_WEBHOOK_URL`).
+| Script | Purpose |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run typecheck` | Route types + TypeScript |
+| `npm run lint` | ESLint |
+| `npm test` | Unit tests |
+| `npm run test:integration` | Service tests against the database in `.env` |
+| `npm run db:migrate` / `db:deploy` / `db:seed` / `db:studio` | Database |
+| `npm run plan:set -- <email> <free\|pro\|premium>` | Grant a plan by hand |
 
-**Sign-in.** With `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` unset (the default for development),
-there's no sign-in: everyone is one local user. Set both to use Supabase Auth
-locally (add `http://localhost:3000/auth/confirm` to the project's Redirect
-URLs). Production refuses to start without them unless `AUTH_MODE=local`.
-
-## Architecture
+## Project layout
 
 ```
-prisma/                   schema, migrations, seed
-src/
-  app/                    routes only — thin pages, loading/error/not-found
-    (app)/                routes rendered inside the app shell
-    api/health/           health route handler
-  components/
-    ui/                   shadcn/ui primitives (generated)
-    shell/                app shell, sidebar + mobile navigation
-    common/               page header, empty/error states
-    dashboard/            home dashboard sections
-    skills/               skill tree cards, visual tree explorer, skill history
-    challenges/           challenge cards and challenge picker
-    streaks/ achievements/ shadow/   Journey page and Home sections
-    projects/             project form, skill picker, milestones, evidence
-    assessments/          quiz form, rubric submission form
-    proof/                proof-tier and evaluator badges
-    passport/             Skill Passport hero, mastery areas, ledger, proof wall
-    reflection/           reflection form and summary, journal forms, Home card
-    experiments/          experiment cards, templates, custom form, review
-    journey/              Journey tabs (challenges & achievements / timeline)
-    insights/             Insights page: CSS column charts, life-area balance,
-                          goal momentum, skill gains, insight report
-    social/               community chrome, person & guild cards, group
-                          challenge cards, leaderboards, mentorship, sharing
-    character/            character avatar + dashboard cards
-      edit/               client editors for the customize page
-  config/                 env validation (server), site constants, navigation
-  modules/                pure domain logic — no I/O, unit-tested
-    progression/          level curve, tiers, attributes
-    identity/             life areas, avatar catalogue & evolution, interests,
-                          preferences, zod input schemas, setup progress
-    goals/                lifecycle rules, progress & next step, deadlines,
-                          roadmap contract + rule-based generator, schemas
-    quests/               categories, generation context & draft contract,
-                          templates, seeded generator, learning providers +
-                          lesson library, payloads, rewards, status rules
-    skills/               skill catalogue, per-skill level curve, tree state
-                          (mastered/learning/available/locked), quest → skill matching
-    achievements/         achievement catalogue + deterministic unlock rules
-    streaks/              streaks derived from completion dates
-    challenges/           challenge templates, windows, grace days, pricing
-    shadow/               Shadow Debt computation and guidance
-    projects/             categories, lifecycle rules, XP pricing, input schemas
-    assessments/          catalogue (quizzes, practicals), grading, rubric scoring,
-                          AI evaluation contract, submission schemas
-    proof/                proof tiers: practiced → tested → demonstrated → mastered
-    reflection/           end-of-day questions, fallback summary, reflection
-                          signals for tomorrow, journal entry schema
-    experiments/          experiment templates, window, daily quest content,
-                          review questions and XP
-    timeline/             timeline events, skill/level milestones replayed
-                          from the ledgers, year/month grouping
-    analytics/            personal analytics: dataset & windows, overview
-                          (trends, balance, goal momentum, skill gains),
-                          pattern detection, AI insight contract + grounding
-    social/               community: guild & group-challenge catalogue, the
-                          SocialDirectory port, shared-ground
-                          matching, leaderboards, mentorship chains
-  server/                 server-only code
-    db/                   Prisma client (singleton + factory), catalogue sync
-    progression/          XP engine + the port quests report completions to
-    auth/                 current-user resolver: Supabase Auth, or the
-                          single local user when auth is off
-    repositories/         data access, one per aggregate
-    services/             use cases composed from repositories + modules
-    actions/              Server Actions — validate input, call services
-    ai/                   provider abstraction, structured-output validation
-  generated/prisma/       Prisma client output (git-ignored)
+docs/        documentation
+prisma/      schema, migrations, seed
+scripts/     Vercel build, plan grants, icon generation
+src/app/     routes (pages, loading states, auth callback, health check)
+src/components/  UI, grouped by feature
+src/modules/     pure domain logic (rules, catalogues) — unit-tested
+src/server/      database, auth, repositories, services, Server Actions, AI
 ```
 
-Dependency direction: `app → components → server/services → repositories → db`,
-with `modules/` usable from anywhere. UI never imports `server/db` or
-`server/ai` directly.
-
-### Rules that matter
-
-- **Backend owns game state.** XP, levels, stats, achievements and quest
-  completion are computed deterministically. AI output is validated with zod
-  (`generateStructured`) and never written straight into progression tables.
-- **Progression is auditable.** XP and attribute gains are append-only ledgers
-  (`XpTransaction`, `StatTransaction`). Level and tier are derived.
-  `XpTransaction` is unique per `(sourceType, sourceId)`, so one action can't
-  award XP twice. `User.totalXp` is a rollup kept by database triggers on the
-  ledger (never written by app code), so reading a total is one row.
-- **Symbols are icons.** Catalogues store an emoji as a symbol key; the UI
-  renders it through `<Glyph>` (`components/common/glyph.tsx`) as a coloured
-  SVG icon, so nothing depends on the device's emoji font.
-- **Single user, multi-user-ready.** Every user-owned row has `userId`.
-  `getCurrentUser()` is the only place that decides who the user is.
-- **Identity is data, progression is earned.** The user chooses name, avatar
-  style/colour/emblem, interests, life areas, focus (max 3) and preferences.
-  Level, tier and avatar evolution (rings, glow, sparks) are derived from XP
-  and can't be set directly. The five core life areas are always active.
-- **Roadmaps have one contract, many authors.** `roadmapDraftSchema`
-  (`modules/goals/roadmap.ts`) is the shape every generator must return — the
-  rule-based templates now, the AI Mentor later via `generateStructured`. The
-  service validates the draft, writes milestones/missions with a `source`
-  (USER / TEMPLATE / AI) and records a `RoadmapRevision` snapshot. To plug in
-  AI, implement `RoadmapGenerator` and return it from `roadmapGenerator()` in
-  `goal.service.ts`.
-- **Progress is derived.** Milestone status follows its missions; goal progress
-  is completed ÷ non-skipped missions. Nothing is typed in by hand.
-- **One day, generated once.** `ensureTodaySet` creates the user's quest set
-  on the first visit of their calendar day (their timezone) and never again:
-  `DailyQuestSet` is unique per (user, date) and `Quest` per (set, slot), so
-  refreshes and concurrent loads can't duplicate anything. Generation is
-  seeded by user + date + slot, so it's reproducible.
-- **Five core slots, always.** PHYSICAL, MENTAL, LEARNING, SOCIAL and
-  PERSONAL_GOAL, plus one optional side quest for a creativity/experiences
-  focus. The goal slot follows the major goal's next mission.
-- **Quest generators share a contract.** Rule-based templates implement
-  `QuestGenerator` (`modules/quests/context.ts`); an AI generator will too.
-  Drafts are validated with `questDraftSchema`; XP is priced by the backend
-  (`questXpReward`), never by the generator.
-- **Learning plugs in.** Learning quests can reference a lesson through a
-  `LearningExperienceProvider`. The bundled `library` provider serves curated
-  micro-lessons; a `mentor` provider will serve AI-generated ones.
-- **Flexible, never punitive (spec §55).** Energy check-ins regenerate
-  untouched quests; skipping asks what got in the way; "Tomorrow" carries a
-  quest to the next day once; unfinished quests simply expire.
-- **Progression is deterministic and auditable.** Quest completed → backend
-  validates → XP transaction written → total XP, level and attributes
-  recalculated (spec §6). Totals are never stored as bare numbers: they're
-  summed from the append-only `XpTransaction` / `StatTransaction` ledger, so
-  every point traces back to a real action and undo reverses cleanly.
-  - **Never double-pays.** `XpTransaction` is unique per `(sourceType,
-    sourceId)`, so completing twice, refreshing, or two concurrent submits
-    can only ever produce one award.
-  - **Invalid XP is refused.** Negative, zero, fractional and absurd amounts
-    are rejected before anything is written (`isAwardableXp`).
-  - **Attributes follow life areas.** Each award splits across attributes by
-    fixed weights that sum to exactly the XP (`attributeAwards`) — progression
-    indicators, not measurements of a person.
-  - Completions recorded before the engine existed can be granted with
-    `npm run db:backfill-xp` (idempotent).
-- **Goals are never deleted from the UI.** Archive hides a goal and makes it
-  read-only; restore brings it back.
-- **Server Actions never trust their input.** Every action re-parses its
-  arguments with the zod schemas in `modules/identity/schemas.ts`.
-- **AI provider is swappable.** `AI_PROVIDER` selects the implementation:
-  `mock` (offline, deterministic) or `anthropic` (see AI Mentor above).
-- **Skills are data, and deliberately unequal.** Trees live in
-  `modules/skills/catalogue.ts` and are synced into `SkillTree`/`Skill` rows,
-  so AI-generated skill paths can add trees without new code. Each skill sets
-  its own XP cost, depth and unlock gate. Skill XP is an append-only
-  `SkillXpTransaction` ledger (the skill history); levels and states are
-  derived. A completed quest is routed to a skill by quest type → goal →
-  quest topic → interests → life area; a locked target pays into its
-  requirement chain instead. Undo revokes skill progress exactly.
-- **Achievements are earned, never granted.** Pure rules over real counts
-  (`modules/achievements`) are checked after every quest and goal completion.
-  Achievement XP is paid once and moves no stats; unlocks are never revoked.
-- **Streaks are secondary.** They're derived from completion dates, not
-  stored. A missed day ends a run, but lifetime days and the best run are
-  permanent — and lifetime days are what the UI leads with.
-- **Challenges are earned through quests.** Starting one from a template sets
-  a window with one grace day per week; each day is credited by completing a
-  matching quest (once per day). Target and bonus XP are priced by the
-  backend. At most two run at once. Setting one down keeps its days.
-- **Shadow Debt is a mirror, not a penalty.** It counts only core quests that
-  expired unacknowledged in the last 14 days (the second week at half
-  weight). Skips, deferrals and swaps don't count, days you didn't open the
-  app don't count, and it never touches XP. It shows gentle suggestions:
-  a lighter day, fewer commitments, reflection.
-- **Projects pay only with proof.** A project can't be completed without at
-  least one piece of evidence (a link, code, document, media or a written
-  note) and one skill. Completion pays character XP (grows with finished
-  milestones and evidence) and XP into every skill it used, priced by each
-  skill's own cost. Reopening takes that payment back exactly; evidence stays.
-- **Assessments: understanding vs ability.** Quizzes are graded on the server
-  against an answer key the page never sees (answers are revealed only after a
-  pass). Practical tasks and project reviews are scored against a weighted
-  rubric — by the AI when configured, otherwise by the user's own ratings with
-  evidence attached. Either way the backend applies the pass mark, and every
-  result is labelled Auto-graded, AI-reviewed or Self-reviewed. AI output that
-  doesn't score exactly the rubric is discarded. Retakes are free; only a first
-  pass pays XP.
-- **Mastery takes proof.** Lessons and quests build practice XP, but a skill at
-  its top level only becomes Mastered after a passed practical task or project
-  review in it. The Skill Passport shows each skill's proof tier — Practiced,
-  Tested, Demonstrated, Mastered — next to the evidence behind it.
-- **Ledger source keys are global.** `XpTransaction` is unique on
-  `(sourceType, sourceId)` across all users, so a `sourceId` must identify one
-  user's action: a quest, project or challenge id, or `userId:key` for things
-  every user can earn (achievements, assessments).
-- **The journal is private.** Journal entries are reachable only through
-  `journal.service`, every query is scoped to the owner, and they never appear
-  on the passport or timeline, in the mentor's context, or in anything sent to
-  AI.
-- **Reflections close the daily loop.** One end-of-day reflection per day
-  (five optional questions plus a mood), editable for 7 days. Saving it writes
-  a summary and one idea for tomorrow — from the AI when configured, otherwise
-  built only from the user's own words and the day's quest record, and always
-  labelled with its source. The latest reflection shapes the next day: a rough
-  day lowers quest difficulty, and the reflection text is passed to the AI
-  quest generator and the mentor.
-- **Experiments live inside the day.** An active experiment adds one short
-  practice quest per day (slot `EXPERIMENT` / `EXPERIMENT_2`, never swapped,
-  deferred or removed by energy changes). Completing it earns a practice day
-  and trains the related skill tree. When the window ends (or the user wraps up
-  early) the review asks: did you enjoy it, were you interested, did you
-  improve, what did you learn, do you want to continue? The review pays XP per
-  day tried, and "Make it a goal" creates a goal with a roadmap.
-- **The timeline is derived, not stored.** Goals, projects, achievements,
-  challenges, experiments, experiences, skill milestones (started, level 3, top
-  level, demonstrated) and character tiers are read from existing records and
-  replayed ledgers, grouped by year and month in the user's timezone.
-- **Analytics are counts, not scores.** The Insights page charts the user's own
-  records — quests completed per week and per life area, XP, skill levels
-  replayed from the skill ledger, goal momentum (moving = progress in 2+ of the
-  last 4 weeks), challenges. Nothing is a health, ability or "life score", and
-  balance is described as a picture of the days, not a target.
-- **Patterns carry their evidence.** Rules in `modules/analytics/patterns.ts`
-  look for shifts worth knowing (an area dipping while the rest holds, hard
-  quests done in the morning, several goals but few moving, skill practice up
-  after a project started) and each pattern states the numbers it rests on.
-  Changes need a minimum volume, "from zero" isn't a trend, and nothing claims
-  a cause. Fewer than 5 completions in 12 weeks → no patterns at all.
-- **AI explains, never adds.** With AI on, the model rewrites the patterns into
-  insights and recommendations but must cite pattern keys; items citing unknown
-  keys are dropped, the evidence shown is always the backend's, and links are
-  limited to an in-app allowlist. If nothing grounded survives, the rule-based
-  report is shown. The model input never includes the journal or raw notes and
-  doesn't depend on the charted range, so results are cached in memory per
-  user until the patterns change. The report streams in behind the charts.
-- **The community is real members who chose to be seen.** Every other person
-  comes from `SocialDirectory` (`modules/social/directory.ts`), implemented by
-  `server/services/community-directory.ts`. It returns only members whose
-  profile is COMMUNITY, carrying only what they share — a hidden level,
-  record or skill list is `null`/empty, never zero. It loads once per request
-  in a fixed number of batched queries. Private members are counted (guild
-  sizes, "N others running this") but never named. There is no feed.
-- **Mentorship is two-sided.** A request is PENDING until the other member
-  accepts or declines; only then can the two leave each other notes (private
-  to them, rate-limited, closed when either ends it). Emails are never shown.
-- **Group challenges run on each person's own window.** `GroupChallengeEntry`
-  links a member to an ordinary personal challenge. Joining a group challenge starts an ordinary personal
-  challenge from the usual template, so its days are earned by real quests and
-  the two-at-a-time limit still applies; leaving the group leaves the
-  challenge running.
-- **Nothing is shared until the user shares it.** A social profile is PRIVATE
-  by default, with per-part toggles (level, skills, achievements), and the
-  journal and reflections are never shareable at all. Leaderboards are opt-in
-  and list nobody who hasn't asked to be listed.
-- **You vs. your previous self comes first.** Every community page leads with
-  the user's last 28 days against their own 28 before — the same measure shown
-  for other people. Leaderboards are opened deliberately (no board renders
-  until one is chosen), ties share a rank, the "own improvement" board needs a
-  real baseline before it will rank anyone, and the viewer always sees their
-  own row.
-- **Discovery explains itself.** Suggested people and guilds carry the reasons
-  they were suggested — shared interests, shared guilds, matching focus areas
-  or a skill one of them could help with. Matching never uses anything private.
-- **Mentorship is a chain, not a ladder.** Expert → mentor → beginner, derived
-  from who mentors whom. The viewer's own standing comes from the skills they
-  built (level 3 to mentor, 7 for expert), and a near-peer ranks above a
-  distant expert on purpose.
+Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

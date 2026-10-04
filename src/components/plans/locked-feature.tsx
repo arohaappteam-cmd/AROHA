@@ -31,20 +31,9 @@ export function LockedFeature({
   return (
     <section
       aria-label={`${title} — part of ${plan.name}`}
-      className={cn(
-        "relative overflow-hidden rounded-3xl border bg-card p-6 md:p-8",
-        tier === "PREMIUM" ? "border-amber-400/30" : "border-violet-400/30",
-        className,
-      )}
+      className={cn("rounded-3xl border bg-card p-6 md:p-8", className)}
     >
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute -top-24 -right-24 size-72 rounded-full blur-3xl",
-          tier === "PREMIUM" ? "bg-amber-400/15" : "bg-violet-500/20",
-        )}
-      />
-      <div className="relative flex flex-col gap-6 md:flex-row md:items-start">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
         <span className={cn("grid size-14 shrink-0 place-items-center rounded-2xl border bg-background/60", style.accent)}>
           <LockKeyholeIcon className="size-6" aria-hidden />
         </span>

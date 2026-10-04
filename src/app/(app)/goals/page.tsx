@@ -68,7 +68,7 @@ export default async function GoalsPage(props: PageProps<"/goals">) {
       </nav>
 
       {view === "current" && overview.activeCount > RECOMMENDED_MAX_ACTIVE_GOALS && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+        <p className="rounded-lg border bg-muted/40 px-4 py-3 text-sm">
           You have {overview.activeCount} active goals. Real progress usually comes from focusing on two or three —
           consider pausing a few.
         </p>

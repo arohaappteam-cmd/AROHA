@@ -1,6 +1,6 @@
 // AROHA — core data model.
 //
-// Design rules (see AROHA_Master_Product_Specification §6, §52):
+// Design rules (see docs/PRODUCT_SPEC.md §6, §52):
 // - The backend owns authoritative game state. AI output is never written
 //   directly into progression tables.
 // - Progression is auditable: XP and stat gains are append-only transactions.

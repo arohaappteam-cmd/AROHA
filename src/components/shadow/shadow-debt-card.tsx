@@ -23,8 +23,8 @@ export function ShadowDebtCard({ debt }: { debt: ShadowDebt }) {
       className={cn(
         "space-y-2.5 rounded-2xl border p-5",
         debt.level === "LIGHT" && "border-border bg-muted/30",
-        debt.level === "BUILDING" && "border-indigo-500/30 bg-indigo-500/5",
-        debt.level === "HEAVY" && "border-indigo-500/50 bg-indigo-500/10",
+        debt.level === "BUILDING" && "border-border bg-muted/40",
+        debt.level === "HEAVY" && "border-foreground/20 bg-muted/60",
       )}
     >
       <p className="flex items-center gap-2 font-semibold">

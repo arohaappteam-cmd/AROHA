@@ -1,7 +1,26 @@
-# Deploying AROHA — Supabase + Vercel
+# Launching AROHA — GitHub + Supabase + Vercel
 
-Supabase gives AROHA its **database** and **sign-in** (email + Google).
-Vercel **runs the app**. Budget about an hour the first time.
+**GitHub** holds the code. **Supabase** gives AROHA its database and sign-in
+(email + Google). **Vercel** builds the code from GitHub and runs the site.
+Budget about an hour the first time.
+
+## Launch checklist
+
+Do these in order; each links to its detailed steps below.
+
+1. [ ] **Code on GitHub** — create a private repo and push (step 8)
+2. [ ] **Supabase project** — create it, copy two connection strings and the API keys (steps 1–3)
+3. [ ] **Email sign-in** — confirm-email on, link templates, SMTP (step 4)
+4. [ ] **Google sign-in** — Google OAuth client → paste into Supabase (step 5)
+5. [ ] **Vercel** — import the GitHub repo, add 6 environment variables, deploy (step 9)
+6. [ ] **Connect the domain back** — Vercel URL into Supabase and Google (steps 6 and 10)
+7. [ ] **Test** — sign up, Google, reset password, plans (Part 3)
+8. [ ] **Share** — send friends the link; grant Pro to anyone you like (Plans section)
+9. [ ] **Monitor** — free uptime check on `/api/health` (step 11)
+
+From then on, every `git push` to `main` redeploys automatically.
+
+---
 
 You'll collect these values along the way. Keep them in a password manager,
 never in git:
@@ -149,17 +168,41 @@ Leave **Phone** and **Anonymous sign-ins** off. *Pro plan only:* turn on
 
 ---
 
-## Part 2 — Vercel
+## Part 2 — GitHub and Vercel
 
 ### 8. Put the code on GitHub
 
-Commit your work and push it to a **private** GitHub repository. `.env` is
-git-ignored — keep it that way.
+Vercel deploys whatever is on your GitHub repository's `main` branch.
 
-```bash
-git remote add origin https://github.com/YOUR-NAME/aroha.git
-git push -u origin main
-```
+1. **Create the repository** at [github.com/new](https://github.com/new):
+   name `aroha`, visibility **Private**, and leave *"Add a README"*,
+   *.gitignore* and *license* **unticked** (the project already has them).
+   Click **Create repository** and copy its URL
+   (`https://github.com/YOUR-NAME/aroha.git`).
+2. **Bring `main` up to date** with the latest work (from the project folder):
+
+   ```bash
+   git checkout main
+   git merge --ff-only phase-14-launch
+   ```
+
+3. **Connect and push:**
+
+   ```bash
+   git remote add origin https://github.com/YOUR-NAME/aroha.git
+   git push -u origin main
+   ```
+
+   The first push opens a GitHub sign-in window (Git Credential Manager).
+   If it asks for a password in the terminal instead, use a
+   [personal access token](https://github.com/settings/tokens) with *repo*
+   access, not your GitHub password.
+4. Refresh the repo page on GitHub — you should see `src/`, `prisma/`,
+   `docs/` and the README. **`.env` must not be there** (it's git-ignored;
+   it holds your local database password).
+
+Later changes: commit, then `git push`. Vercel redeploys on every push to
+`main`; pushes to other branches get their own preview URLs.
 
 ### 9. Import the project
 
@@ -264,7 +307,7 @@ WhatsApp, iMessage or Slack unfurl with AROHA's preview card.
 
 ---
 
-## 11. Watch it (free)
+### 11. Watch it (free)
 
 **Uptime monitor** — also keeps Supabase's free project from pausing:
 
@@ -283,24 +326,8 @@ Customize → Account. Test it once with a spare account.
 
 ## How the database is tuned
 
-- **Pooling for serverless.** The app connects through Supabase's
-  transaction pooler with a small per-instance pool (`DATABASE_POOL_MAX`,
-  default 5). On Vercel's Fluid compute, idle connections are closed before
-  an instance is suspended (`attachDatabasePool`).
-- **Indexes on every hot path.** Every foreign key the app joins, filters or
-  cascades on is indexed, plus the lookups the progression engine does on
-  every award.
-- **No ledger scans for totals.** `User.totalXp` is a running total kept by
-  database triggers in the same transaction as each XP ledger write, so the
-  sidebar, level and leaderboards read one row instead of summing history.
-  The ledger stays the source of truth; to rebuild the total from it:
-
-  ```sql
-  UPDATE "User" u SET "totalXp" = COALESCE((SELECT SUM(amount) FROM "XpTransaction" x WHERE x."userId" = u.id), 0);
-  ```
-
-- **Catalogues cached in memory.** Skill trees and skills only change on
-  deploy, so a warm instance serves them without a query.
+Pooling, indexes, the `totalXp` rollup and the catalogue cache are explained
+in [DATABASE.md](DATABASE.md#performance).
 
 ## Updating later
 

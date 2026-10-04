@@ -16,7 +16,7 @@ const mark = readFileSync(`${root}src/app/icon.svg`, "utf8");
 /** The mark without its rounded corners: platforms that mask icons want full bleed. */
 const fullBleed = mark.replace('rx="16"', 'rx="0"');
 
-/** The mark shrunk into the maskable safe zone (inner 80%) over the gradient. */
+/** The mark shrunk into the maskable safe zone (inner 80%) over its tile colour. */
 const maskable = fullBleed.replace(
   /(<path d="M16\.5[\s\S]*?<\/svg>)/,
   (art) => `<g transform="translate(6.4 6.4) scale(0.8)">${art.replace("</svg>", "")}</g></svg>`,
@@ -57,28 +57,18 @@ writeFileSync(`${root}public/icon-512.png`, await png(mark, 512));
 writeFileSync(`${root}public/icon-maskable-512.png`, await png(maskable, 512));
 
 // Social preview (link unfurls in WhatsApp, iMessage, Slack…): 1200×630.
-const art = mark.replace(/<svg[^>]*>/, "").replace("</svg>", "").replace(/id="aroha-bg"/g, 'id="mark-bg"').replace(/url\(#aroha-bg\)/g, "url(#mark-bg)");
+const art = mark.replace(/<svg[^>]*>/, "").replace("</svg>", "");
 const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <radialGradient id="glow-a" cx="0.15" cy="0.1" r="0.7">
-      <stop offset="0" stop-color="#7c3aed" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    <radialGradient id="glow" cx="0.15" cy="0.1" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="glow-b" cx="0.95" cy="1" r="0.6">
-      <stop offset="0" stop-color="#f59e0b" stop-opacity="0.35"/>
-      <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#c4b5fd"/>
-      <stop offset="0.6" stop-color="#f0abfc"/>
-      <stop offset="1" stop-color="#fcd34d"/>
-    </linearGradient>
   </defs>
-  <rect width="1200" height="630" fill="#0d0b14"/>
-  <rect width="1200" height="630" fill="url(#glow-a)"/>
-  <rect width="1200" height="630" fill="url(#glow-b)"/>
+  <rect width="1200" height="630" fill="#0a0a0a"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
   <g transform="translate(96 150) scale(3.4)">${art}</g>
-  <text x="96" y="470" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="18" fill="url(#word)">AROHA</text>
+  <text x="96" y="470" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="18" fill="#fafafa">AROHA</text>
   <text x="100" y="535" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" fill="#d4d4d8">Turn everyday life into an evolving RPG.</text>
 </svg>`;
 writeFileSync(`${root}src/app/opengraph-image.png`, await sharp(Buffer.from(og)).png().toBuffer());

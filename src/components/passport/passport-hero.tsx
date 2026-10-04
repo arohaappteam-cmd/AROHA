@@ -33,7 +33,7 @@ export function PassportHero({ passport, seed }: { passport: SkillPassport; seed
       <div className="relative isolate overflow-hidden px-6 pt-6 pb-8 md:px-10 md:pt-8">
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklch,var(--primary)_32%,transparent),transparent_55%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--xp)_22%,transparent),transparent_55%)]"
+          className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklch,var(--primary)_32%,transparent),transparent_55%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklch,var(--primary)_22%,transparent),transparent_55%)]"
         />
         {/* Guilloche-style security pattern, like a real passport page. */}
         <svg aria-hidden className="absolute inset-0 -z-10 h-full w-full opacity-[0.07]" preserveAspectRatio="none">

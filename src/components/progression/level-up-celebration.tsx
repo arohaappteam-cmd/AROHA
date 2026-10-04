@@ -37,7 +37,7 @@ export function LevelUpCelebration({ outcome, onClose }: { outcome: ProgressionO
       >
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--xp)_30%,transparent),transparent_65%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklch,var(--primary)_30%,transparent),transparent_65%)]"
         />
         <Button
           variant="ghost"

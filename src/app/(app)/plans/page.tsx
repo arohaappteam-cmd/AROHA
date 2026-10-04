@@ -6,19 +6,12 @@ import { PageHeader } from "@/components/common/page-header";
 import { PLAN_STYLE, PlanBadge } from "@/components/plans/plan-badge";
 import { PlanInterestButton } from "@/components/plans/plan-interest-button";
 import { Button } from "@/components/ui/button";
-import type { PlanTier } from "@/generated/prisma/enums";
 import { PLAN_COMPARISON, PLAN_TIERS, PLANS } from "@/modules/plans/catalogue";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getPlanOverview } from "@/server/services/plan.service";
 
 export const metadata: Metadata = { title: "Plans" };
-
-const CARD_FRAME: Record<PlanTier, string> = {
-  FREE: "border-emerald-500/25",
-  PRO: "border-violet-400/40 bg-gradient-to-b from-violet-500/10 to-transparent",
-  PREMIUM: "border-amber-400/40 bg-gradient-to-b from-amber-400/10 via-fuchsia-500/5 to-transparent",
-};
 
 const FAQ = [
   {
@@ -54,11 +47,7 @@ export default async function PlansPage() {
     <div className="space-y-10">
       <PageHeader
         eyebrow="Plans"
-        title={
-          <>
-            Grow at your own <span className="text-gradient-brand">pace</span>
-          </>
-        }
+        title="Grow at your own pace"
         description="AROHA is free to play. Pro and Premium are coming soon — payments aren't live, so nothing is charged today."
         actions={<PlanBadge tier={plan} label={`You're on ${PLANS[plan].name}`} className="px-3 py-1 text-xs" />}
       />
@@ -70,7 +59,7 @@ export default async function PlansPage() {
           const Icon = style.icon;
           const current = tier === plan;
           return (
-            <li key={tier} className={cn("relative flex flex-col gap-5 rounded-3xl border bg-card p-6", CARD_FRAME[tier], current && "ring-2 ring-primary/60")}>
+            <li key={tier} className={cn("relative flex flex-col gap-5 rounded-3xl border bg-card p-6", current && "ring-2 ring-primary/60")}>
               {!info.available && (
                 <span className="absolute top-5 right-5 rounded-full bg-foreground/90 px-2.5 py-0.5 text-[11px] font-semibold text-background">
                   Coming soon
@@ -85,7 +74,7 @@ export default async function PlansPage() {
                   <p className="text-sm text-muted-foreground">{info.tagline}</p>
                 </div>
                 <p className="text-3xl font-semibold tracking-tight whitespace-nowrap">
-                  {info.price ?? <span className="text-gradient-brand text-2xl">Coming soon</span>}
+                  {info.price ?? <span className="text-2xl">Coming soon</span>}
                   {tier === "FREE" && <span className="ml-1.5 text-sm font-normal text-muted-foreground">forever</span>}
                 </p>
               </div>

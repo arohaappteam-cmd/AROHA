@@ -43,7 +43,7 @@ const envSchema = z.object({
   // Defaults to "supabase" when the keys are set, otherwise "local".
   AUTH_MODE: z.enum(["supabase", "local"]).optional(),
   // "Continue with Google" on the sign-in page. Turn the Google provider on
-  // in Supabase first (DEPLOYMENT.md), or set "off" to hide the button.
+  // in Supabase first (docs/DEPLOYMENT.md), or set "off" to hide the button.
   AUTH_GOOGLE: z.enum(["on", "off"]).default("on"),
   // Server-only Supabase secret key (sb_secret_… or the legacy service_role
   // key). Used for one thing: removing a sign-in when someone deletes their
