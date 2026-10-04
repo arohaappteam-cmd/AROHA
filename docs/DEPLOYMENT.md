@@ -121,15 +121,18 @@ in even before SMTP is set up.
 1. Create a project (e.g. "AROHA").
 2. **Google Auth Platform** (formerly "OAuth consent screen") → **Get started**:
    - App name **AROHA**, your support email, audience **External**.
-   - **Branding → Authorized domains**: add `supabase.co` (and your own domain
-     if you add one later).
+   - **Branding → Authorized domains**: add your project's own Supabase
+     domain, `abcdefghij.supabase.co` (the host of `NEXT_PUBLIC_SUPABASE_URL`).
+     Plain `supabase.co` and `vercel.app` are rejected ("must be a top
+     private domain") because they're shared public suffixes. Add your own
+     custom domain here too if you get one later.
    - **Data access**: the defaults (`openid`, `email`, `profile`) are all AROHA
      asks for. These are non-sensitive, so no Google verification is needed.
    - **Audience → Publish app** → *In production*. While it says *Testing*,
      only people you list as test users can sign in.
 3. **Clients → Create client** → **Web application**:
-   - **Authorized JavaScript origins**: `https://YOUR-APP.vercel.app` and
-     `http://localhost:3000`
+   - **Authorized JavaScript origins**: leave empty — Supabase runs the Google
+     exchange on its side, so only the redirect URI matters.
    - **Authorized redirect URIs**: the **Callback URL** Supabase shows on its
      Google provider page — `https://abcdefghij.supabase.co/auth/v1/callback`
    - Create, then copy the **Client ID** and **Client secret**.
@@ -252,8 +255,8 @@ same city each takes about a millisecond instead of a hundred.
 ### 10. Finish the loop
 
 1. Copy the production address (e.g. `https://aroha.vercel.app`) into
-   Supabase **Site URL** and **Redirect URLs** (step 6) and Google's
-   **Authorized JavaScript origins** (step 5).
+   Supabase **Site URL** and **Redirect URLs** (step 6). Google needs no
+   change — it only ever talks to Supabase's callback URL.
 2. Open `https://YOUR-APP.vercel.app/api/health` — you want `"status":"ok"`
    and `"database":{"ok":true,…}`.
 
